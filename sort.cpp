@@ -41,11 +41,49 @@ insightful comparison of some non-comparison sort algorithm. http://functionspac
 insightful comparison of hybrid sort algorithm (eg, introsort/Timsort), below is some excerpt. http://functionspace.com/topic/3506/opinion/6409
 Introsort gives the speed of quicksort while solving the O(n2) worst case by going to heapsort if the recursion level is too high. It's an elegant solution using two classic algorithms. Low memory, simple, in many cases faster than other methods, but not stable and will do more comparisons than merge sort. Note that a practical implementation may add insertion sort for small partitions and hence have three different algorithms.
 Timsort uses merge sort and insertion sort. Both are stable and merge sort has worst case O(nlogn). It does particularly well on ordered or partially ordered data, which isn't uncommon. It does fewer comparisons than most sorts, which is a huge advantage in some cases (with a complicated comparison function, which isn't unusual in Python or Perl, for example). Like most merge-sort methods, it uses more temporary memory though there are ways to mitigate this at the expense of speed and/or complexity.
-TODO timsort(merge_sort)
+TODO  timsort(merge_sort)    inplace merge(eg, in std::stable_sort, as fallback.)
 */
 
+auto stack_level = 0;
+enum { S_threshold = 4 };
+
+template <typename RandomIt>
+inline void shift_left(RandomIt first, RandomIt next) {
+    assert(first < next);
+    auto val = std::move(*next);
+    while (next != first) {
+        --next;
+        next[1] = next[0];
+    }
+    *first = val;
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline void unguarded_shift_left(RandomIt next, Compare comp) {
+    auto val = std::move(*next);
+    while (comp(val, *--next)) {
+        next[1] = next[0];
+    }
+    next[1] = val;
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void insertion_sort(RandomIt first, RandomIt last, Compare comp) {
+    assert(first < last);
+    // insert sort. http://codereview.stackexchange.com/a/47189/81817
+    auto next = first;
+    while (++next < last) {
+        if (comp(*next, *first)) {
+            shift_left(first, next);
+        } else {
+            unguarded_shift_left(next, comp);
+        }
+    }
+    // print(first, last, ' ', " post insert");
+}
+
 // The worst-case running time of Shellsort using Hibbard's increments is Theta(N3/2).
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
 void shell_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
     constexpr int gaps[] = {701, 301, 132, 57, 23, 10, 4, 1}; // https://en.wikipedia.org/wiki/Shellsort#Gap_sequences
     auto p_gaps = gaps;
@@ -83,7 +121,6 @@ void shell_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
         }
         if (step == 1) break;
     }
-    print(first, last);
 }
 
 namespace test {
@@ -99,18 +136,46 @@ namespace test {
         res.push_back({1,9,2,10,3,11,4,12,5,13,6,14,7,15,8,16});
         return res;
     };
-    void shell_sort() {
-        cout << "==== shell_sort ====\n";
+    template <typename Container>
+    bool is_sorted(const Container& v) {
+        typedef typename std::iterator_traits<decltype(std::begin(v))>::value_type T;
+        std::vector<T> original {v};
+        std::vector<T> sorted {original};
+        std::sort(sorted.begin(), sorted.end());
+        return original == sorted;
+    }
+    template <typename Container,
+             // typename RandomIt = typename std::remove_const<decltype(std::begin(Container()))>::type,  // const_iterator?
+             typename RandomIt = typename std::remove_const<decltype(Container().begin())>::type,
+             typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>,
+             typename SortFunc = void(RandomIt, RandomIt, Compare) >
+    void test_sort_func(SortFunc f, Container& v) {
+        f(std::begin(v), std::end(v), Compare());
+        std::string description = is_sorted(v)? "sorted" : "not sorted";
+        print(v,' ', description);
+    }
+    template <typename Container = std::vector<int>,    // a workaround
+             // typename RandomIt = typename std::remove_const<decltype(std::begin(Container()))>::type,  // const_iterator?
+             typename RandomIt = typename std::remove_const<decltype(Container().begin())>::type,
+             typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>,
+             typename SortFunc = void(RandomIt, RandomIt, Compare) >
+    void test_sort_func_for_all_test_case(SortFunc f, std::string description = "sort") {
+        cout << "\n==== " << description << " ====\n";
         for (auto v: test_case()) {
-            ::shell_sort(v.begin(), v.end());
+            // auto lv = stack_level;
+            test_sort_func(f, v);
+            // cout << stack_level - lv << " call of " << description << endl;
         }
+    }
+    void shell_sort() {
+        test_sort_func_for_all_test_case(::shell_sort, "shell_sort");
     }
 }
 
 template <typename RandomIt,
          typename DistanceType, 
          typename ValueType, 
-         typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
+         typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
 inline void adjust_max_heap(RandomIt first, DistanceType hole, DistanceType length, ValueType value, Compare comp) {
     auto secondChild = 2 * (hole + 1);
     while (secondChild < length) {
@@ -133,7 +198,7 @@ inline void adjust_max_heap(RandomIt first, DistanceType hole, DistanceType leng
     first[hole] = std::move(value);
 }
 
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
 void heap_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
     // print(first, last, "before make heap");
     auto sz = last - first;
@@ -152,146 +217,180 @@ void heap_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
 
 namespace test {
     void heap_sort() {
-        cout << "==== heap_sort ====\n";
-        for (auto v: test_case()) {
-            // std::reverse(v.begin(), v.end());
-            // ::heap_sort(v.begin(), v.end(), std::greater<int>());
-            ::heap_sort(v.begin(), v.end());
-            print(v,' ',"sorted");
-        }
+        test_sort_func_for_all_test_case(::heap_sort, "heap_sort");
     }
 }
 
-auto stack_level = 0;
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
-void quick_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
-    ++stack_level;
-    // cout << "stack_level = " << stack_level << ", size = " << last - first << endl;
-    // print(first, last);
-    if (last - first < 2) return;
-    // move pivot to first. use median of three. switch to insertion sort for small input size.
-    // partition, repetitively swap currently leftmost 1 with currently rightmost 0.  (Hoare-Partition)
-    // 0 -- comp(val, pivot) == true, 1 -- comp(val, pivot) == false
-    // after that, swap pivot with rightmost 0.
-    auto left = first, right = last;
-    while (true) {
-        do --right; while (right != first && !comp(*right, *first));
-        do ++left; while (left != last && comp(*left, *first));
-        // cout << "-- inner loop: "; cout << "left index = " << left - first << ", right index = " << right - first << ", left = " << *left << ", right = " << *right << endl;
-        // print(first, last);
-        // wait();
-        if (left < right) {
-            std::iter_swap(left, right);
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline void move_median_of_three_to_first(RandomIt first, RandomIt last, Compare comp) {
+    assert(last - first >= 2);
+    auto mid = first + (last - first) / 2;
+    --last;
+    // cout << "pre median:" << " a = " << *first << ", b = " << *mid << ", c = " << *last << endl;
+    if (comp(*first, *mid)) {
+        if (comp(*first, *last)) {  // a is smallest
+            if (comp(*mid, *last)) {
+                std::iter_swap(first, mid);
+            } else {
+                std::iter_swap(first, last);
+            }
         } else {
-            break;
+            // c <= a < b, do nothing
+        }
+    } else {
+        if (comp(*first, *last)) {
+            // b <= a < c, do nothing
+        } else {  // a is largest
+            if (comp(*mid, *last)) {
+                std::iter_swap(first, last);
+            } else {
+                std::iter_swap(first, mid);
+            }
         }
     }
-    // cout << "++ out of loop: "; cout << "left index = " << left - first << ", right index = " << right - first << ", left = " << *left << ", right = " << *right << endl;
-    std::iter_swap(right, first);
-    // cout << "after partition: "; print(first, last);
-    // wait();
-    quick_sort(first, right);
-    quick_sort(right + 1, last);
+    // cout << "after median pivoting:" << " a = " << *first << ", b = " << *mid << ", c = " << *last << endl;
+    // cout << ((comp(*mid, *first) ^ comp(*last, *first))? "is median" : "not median") << endl;
 }
 
-namespace test {
-    void quick_sort() {
-        cout << "==== quick_sort ====\n";
-        for (auto v: test_case()) {
-            // auto lv = stack_level;
-            ::quick_sort(v.begin(), v.end());
-            print(v,' ',"sorted");
-            // cout << stack_level - lv << " call of quick_sort" << endl;
-        }
-    }
-}
-
-template <typename RandomIt>
-inline void shift_left(RandomIt first, RandomIt next) {
-    assert(first < next);
-    auto val = std::move(*next);
-    while (next != first) {
-        --next;
-        next[1] = next[0];
-    }
-    *first = val;
-}
-
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
-inline void unguarded_shift_left(RandomIt next, Compare comp = Compare()) {
-    auto val = std::move(*next);
-    while (comp(val, *--next)) {
-        next[1] = next[0];
-    }
-    next[1] = val;
-}
-
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
-void insertion_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
-    assert(first < last);
-    // insert sort. http://codereview.stackexchange.com/a/47189/81817
-    auto next = first;
-    while (++next < last) {
-        if (comp(*next, *first)) {
-            shift_left(first, next);
-        } else {
-            unguarded_shift_left(next, comp);
-        }
-    }
-    // print(first, last, ' ', " post insert");
-}
-
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
-inline void move_median_of_three_to_dest_and_sort_three(RandomIt dest, RandomIt left, RandomIt nth, RandomIt right, Compare comp = Compare()) {
-    // assert_pseudo(dest < left < nth < right);
-    // make three sorted, then swap median with dest. -- a bonus, unguarded partition.
-    std::iter_swap(dest, nth);
-    if (comp(*dest, *left)) { std::iter_swap(left, dest); }
-    if (comp(*right, *dest)) {
-        std::iter_swap(dest, right);
-        if (comp(*dest, *left)) { std::iter_swap(left, dest); }
-    }
-}
-
-template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>> // http://stackoverflow.com/a/2447556/3625404
-void quick_insertion_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
-    ++stack_level;
-    if (last - first < 2) return;
-    if (last - first < 4) {
-        insertion_sort(first, last, comp);
-        return;
-    }
-    auto nth = first + (last - first) / 2;
-    auto left = first + 1, right = last - 1;
-    move_median_of_three_to_dest_and_sort_three(first, left, nth, right, comp);
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+RandomIt unguarded_partion_with_first_as_pivot(RandomIt first, RandomIt last, Compare comp) {
     // unguarded partition; Hoare-Partition. could be extended to 'Bentley-McIlroy 3-way partitioning'.
-    // QUICKSORT IS OPTIMAL Robert Sedgewick Jon Bentley.  http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
+    // cout << " pre partition: "; print(first, last);
+    auto left = first, right = last;
     while (true) {
         do ++left; while (comp(*left, *first));
         do --right; while (comp(*first, *right));
         if (left < right) { std::iter_swap(left, right); }
-        else break;
-    }
-    std::iter_swap(first, right);
-    quick_insertion_sort(first, right);
-    quick_insertion_sort(right + 1, last);
-}
-
-namespace test {
-    void quick_insertion_sort() {
-        cout << "==== quick_insertion_sort ====\n";
-        for (auto v: test_case()) {
-            // auto lv = stack_level;
-            ::quick_insertion_sort(v.begin(), v.end());
-            print(v,' ',"sorted");
-            // cout << stack_level - lv << " call of quick_insertion_sort" << endl;
+        else {
+            std::iter_swap(first, right);
+            // cout << "post partition: "; print(first, last);
+            return right;  // right == left, or, right + 1 == left, when return.
         }
     }
 }
 
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void quick_insertion_sort_non_loop(RandomIt first, RandomIt last, Compare comp) {
+    ++stack_level;
+    if (last - first < 2) return;
+    if (last - first < S_threshold) {
+        insertion_sort(first, last, comp);
+        return;
+    }
+    move_median_of_three_to_first(first, last, comp);
+    auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+    quick_insertion_sort_non_loop(first, pivot, comp);
+    quick_insertion_sort_non_loop(pivot + 1, last, comp);
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void quick_insertion_sort_loop(RandomIt first, RandomIt last, Compare comp) {
+    ++stack_level;
+    while (first < last) {
+        if (last - first < 2) return;
+        if (last - first < S_threshold) {
+            insertion_sort(first, last, comp);
+            return;
+        }
+        move_median_of_three_to_first(first, last, comp);
+        auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+        quick_insertion_sort_loop(first, pivot, comp);
+        first = pivot + 1;
+    }
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void quick_insertion_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
+    quick_insertion_sort_loop(first, last, comp);
+    // quick_insertion_sort_non_loop(first, last, comp);
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void quick_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
+    ++stack_level;
+    if (last - first < 2) return;
+    move_median_of_three_to_first(first, last, comp);
+    auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+    quick_sort(first, pivot, comp);
+    quick_sort(pivot + 1, last, comp);
+}
+
+namespace test {
+    void quick_insertion_sort() {
+        test_sort_func_for_all_test_case(::quick_insertion_sort, "quick_insertion_sort");
+    }
+    void quick_sort() {
+        test_sort_func_for_all_test_case(::quick_sort, "quick_sort");
+    }
+}
+
+template <typename RandomIt, typename BufferIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline void left_merge_with_buffer(RandomIt first, RandomIt mid, RandomIt last, BufferIt buf, Compare comp) {
+    // cout << "   left half: "; print(first, mid);
+    // cout << "  right half: "; print(mid, last);
+    std::move(first, mid, buf);
+    auto buf_end = buf + (mid - first);
+    const bool right_half_exhausted = comp(last[-1], mid[-1]);
+    while (true) {
+        if (comp(*mid, *buf)) {
+            *first = std::move(*mid);
+            ++mid;
+        } else {
+            *first= std::move(*buf);
+            ++buf;
+        }
+        // cout << "current value = " << *first << endl;
+        ++first;
+        if (right_half_exhausted) {
+            if (mid == last) {
+                std::move(buf, buf_end, first);
+                break;
+            }
+        } else {
+            if (first == mid)
+                break;
+        }
+    }
+    // cout << " after merge: "; print(first, last);
+    // wait();
+}
+
+template <typename RandomIt, typename BufferIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline void right_merge_with_buffer(RandomIt first, RandomIt mid, RandomIt last, BufferIt buf, Compare comp) {
+}
+
+template <typename RandomIt, typename BufferIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline void merge_sort_with_buffer(RandomIt first, RandomIt last, BufferIt buf, Compare comp) {
+    ++stack_level;
+    if (last - first < 2) return;
+    if (last - first < S_threshold) {
+        insertion_sort(first, last, comp);
+        return;
+    }
+    auto mid = first + (last - first) / 2;
+    merge_sort_with_buffer(first, mid, buf, comp);
+    merge_sort_with_buffer(mid, last, buf, comp);
+    left_merge_with_buffer(first, mid, last, buf, comp);
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void merge_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
+    typedef typename std::iterator_traits<RandomIt>::value_type T;
+    auto buf = new T[(last - first) / 2 + 1];
+    merge_sort_with_buffer(first, last, buf, comp);
+    delete[] buf;
+}
+
+namespace test {
+    void merge_sort() {
+        test_sort_func_for_all_test_case(::merge_sort, "merge_sort");
+    }
+}
+
 int main() {
-    // test::quick_insertion_sort();
-    // test::quick_sort();
+    test::quick_insertion_sort();
+    test::quick_sort();
     test::heap_sort();
-    // test::shell_sort();
+    test::shell_sort();
+    test::merge_sort();
 }
