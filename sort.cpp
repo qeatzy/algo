@@ -79,7 +79,7 @@ void insertion_sort(RandomIt first, RandomIt last, Compare comp) {
             unguarded_shift_left(next, comp);
         }
     }
-    // print(first, last, ' ', " post insert");
+    // print(first, last, " post insert", ' ');
 }
 
 // The worst-case running time of Shellsort using Hibbard's increments is Theta(N3/2).
@@ -152,7 +152,7 @@ namespace test {
     void test_sort_func(SortFunc f, Container& v) {
         f(std::begin(v), std::end(v), Compare());
         std::string description = is_sorted(v)? "sorted" : "not sorted";
-        print(v,' ', description);
+        print(v, description,' ');
     }
     template <typename Container = std::vector<int>,    // a workaround
              // typename RandomIt = typename std::remove_const<decltype(std::begin(Container()))>::type,  // const_iterator?
