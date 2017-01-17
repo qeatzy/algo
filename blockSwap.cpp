@@ -12,8 +12,8 @@
 // search for __rotate in file /usr/lib/gcc/i686-pc-cygwin/5.4.0/include/c++/bits/stl_algo.h
 // a sensible return value is first + (last - mid). since c++11.
 
-template <typename Iterator>
-Iterator swapBlock_(Iterator first, Iterator mid, Iterator last, std::forward_iterator_tag) {
+template <typename ForwardIt>
+ForwardIt swapBlock_(ForwardIt first, ForwardIt mid, ForwardIt last, std::forward_iterator_tag) {
     if (mid == last) return first; // right half non-empty
     if (first == mid) return last;
     auto next = mid;
@@ -32,8 +32,8 @@ Iterator swapBlock_(Iterator first, Iterator mid, Iterator last, std::forward_it
     return ret;
 }
 
-template <typename Iterator>
-Iterator swapBlock_(Iterator first, Iterator mid, Iterator last, std::random_access_iterator_tag) {
+template <typename RandomIt>
+RandomIt swapBlock_(RandomIt first, RandomIt mid, RandomIt last, std::random_access_iterator_tag) {
     if (mid == last) return first; // right half non-empty
     auto sz_left = mid - first;
     auto next = mid;
@@ -57,27 +57,24 @@ Iterator swapBlock(Iterator first, Iterator mid, Iterator last) {
     return swapBlock_(first, mid, last, typename std::iterator_traits<Iterator>::iterator_category());
 }
 
-auto test_case() {
-    std::vector<vector<int>> res;
-    // res.push_back(range(7));
-    res.push_back({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
-    // res.push_back(range(2));
-    return res;
+namespace test {
+    void swapBlock() {
+        // res.push_back({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        auto v = range(7);
+        print(v, " pre rotate");
+        auto it = ::swapBlock(v.begin(), v.begin() + 7, v.end());
+        // ::swapBlock(v.begin(), v.end(), v.end());
+        print(v, "post rotate");
+        cout << "next start point is " << *it << endl;
+
+        std::list<int> l = { 7, 5, 16, 8 };
+        print(l, " pre rotate");
+        auto l_it = ::swapBlock(l.begin(), ++decltype(l.begin())(l.begin()), l.end());
+        print(v, "post rotate");
+        cout << "next start point is " << *l_it << endl;
+    }
 }
 
 int main() {
-    // std::vector<int> v = range(7);
-    for (auto& v: test_case()) {
-        print(v);
-        // swapBlock(v.begin(), v.begin() + 2, v.end());
-        auto it = swapBlock(v.begin(), v.begin() + 7, v.end());
-        // swapBlock(v.begin(), v.end(), v.end());
-        print(v);
-        cout << "next start point is " << *it << endl;
-    }
-    std::list<int> l = { 7, 5, 16, 8 };
-    print(l);
-    auto it = swapBlock(l.begin(), ++decltype(l.begin())(l.begin()), l.end());
-    print(l);
-    cout << "next start point is " << *it << endl;
+    test::swapBlock();
 }
