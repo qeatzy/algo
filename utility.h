@@ -62,7 +62,7 @@ inline int sgn(int x) { return (x>0) - (x<0); }
 
 template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
 void print(Iterator first, Iterator last, std::string description="", signed char sep=' ') { // char can be either signed or unsigned.
-    if (description != "") {
+    if (description != string()) {
         cout << description << ": ";
         if (sep == '\n') cout << '\n';
     }
@@ -92,12 +92,12 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
 }
 
 template <typename Container>
-void print(const Container &vec, char sep=' ', std::string description="") {
+void print(const Container &vec, std::string description="", char sep=' ') {
     print(std::begin(vec), std::end(vec), description, sep);
 }
 
 template <typename It>
-void print(It b, int n, char sep = ' ', std::string description="") {
+void print(It b, int n, std::string description="", char sep = ' ') {
     assert(n >= 0);
     print(b, b + n, description, ' ');
 }
