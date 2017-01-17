@@ -73,7 +73,8 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
         if (sep < -1) ending_mark = ' ';
     } else if (!(sep == 0 || sep == ' ' || sep == '\n' || sep == '\t')) {
         sep = ' ';
-        if (decltype(last - first)(sep) < last - first) { last -= sep; }
+        auto length = std::distance(first, last);
+        if (decltype(length)(sep) < length) { last = first; std::advance(last, sep); }
     }
     for(auto it = first; it != last; ++it) {
         std::cout << *it;
