@@ -199,19 +199,30 @@ inline void adjust_max_heap(RandomIt first, DistanceType hole, DistanceType leng
 }
 
 template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
-void heap_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
-    // print(first, last, "before make heap");
+void make_max_heap(RandomIt first, RandomIt last, Compare comp) {
     auto sz = last - first;
-    // make heap
     for (auto parent = sz / 2 - 1; parent >= 0; --parent) {
         adjust_max_heap(first, parent, sz,
                 std::move(first[parent]), comp);
     }
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void pop_push_max_heap(RandomIt first, RandomIt last, RandomIt result, Compare comp) {
+    auto value = std::move(*result);
+    *result = std::move(first[0]);
+    adjust_max_heap(first, 0, last - first, value, comp);
+}
+
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void heap_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
+    // print(first, last, "before make heap");
+    // make_max_heap(first, last, comp);
+    make_heap(first, last, comp);
     // print(first, last, "after make heap");
-    while (sz-- > 1) {
-        auto value = std::move(first[sz]);
-        first[sz] = first[0];
-        adjust_max_heap(first, 0, sz, value, comp);
+    while (last - first > 1) {
+        --last;
+        pop_push_max_heap(first, last, last, comp);
     }
 }
 
@@ -253,7 +264,7 @@ inline void move_median_of_three_to_first(RandomIt first, RandomIt last, Compare
 }
 
 template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
-RandomIt unguarded_partion_with_first_as_pivot(RandomIt first, RandomIt last, Compare comp) {
+RandomIt unguarded_partition_with_first_as_pivot(RandomIt first, RandomIt last, Compare comp) {
     // unguarded partition; Hoare-Partition. could be extended to 'Bentley-McIlroy 3-way partitioning'.
     // cout << " pre partition: "; print(first, last);
     auto left = first, right = last;
@@ -268,6 +279,46 @@ RandomIt unguarded_partion_with_first_as_pivot(RandomIt first, RandomIt last, Co
         }
     }
 }
+template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+inline RandomIt unguarded_partition_pivot(RandomIt first, RandomIt last, Compare comp) {
+    move_median_of_three_to_first(first, last, comp);
+    return unguarded_partition_with_first_as_pivot(first, last, comp);
+}
+
+template <typename RandomIt, typename Size, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void heap_select(RandomIt first, RandomIt middle, RandomIt last, Compare comp) {
+    make_max_heap(first, middle);
+    for (auto p = middle; p < last; ++p) {
+        if (comp(*p, *first)) {
+            pop_push_max_heap(first, middle, p, comp);
+        }
+    }
+}
+
+template <typename RandomIt, typename Size, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void intro_select(RandomIt first, RandomIt nth, RandomIt last, Size depth_limit, Compare comp) {
+    while (last - first > 3) {
+        if (depth_limit == 0) {
+            heap_select(first, nth + 1, last, comp);
+            std::swap(first, nth);
+            return;
+        }
+        --depth_limit;
+        auto pivot = unguarded_partition_pivot(first, last, comp);
+        if (pivot <= nth) {
+            first = pivot;
+        } else {
+            last = pivot;
+        }
+    }
+    insertion_sort(first, last, comp);
+}
+
+template <typename RandomIt, typename Size, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
+void intro_select(RandomIt first, RandomIt nth, RandomIt last, Compare comp) {
+    intro_select(first, last,
+            Size(log2(last - first)), comp);
+}
 
 template <typename RandomIt, typename Compare = std::less<typename std::iterator_traits<RandomIt>::value_type>>
 void quick_insertion_sort_non_loop(RandomIt first, RandomIt last, Compare comp) {
@@ -277,8 +328,7 @@ void quick_insertion_sort_non_loop(RandomIt first, RandomIt last, Compare comp) 
         insertion_sort(first, last, comp);
         return;
     }
-    move_median_of_three_to_first(first, last, comp);
-    auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+    auto pivot = unguarded_partition_pivot(first, last, comp);
     quick_insertion_sort_non_loop(first, pivot, comp);
     quick_insertion_sort_non_loop(pivot + 1, last, comp);
 }
@@ -292,8 +342,7 @@ void quick_insertion_sort_loop(RandomIt first, RandomIt last, Compare comp) {
             insertion_sort(first, last, comp);
             return;
         }
-        move_median_of_three_to_first(first, last, comp);
-        auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+        auto pivot = unguarded_partition_pivot(first, last, comp);
         quick_insertion_sort_loop(first, pivot, comp);
         first = pivot + 1;
     }
@@ -310,7 +359,7 @@ void quick_sort(RandomIt first, RandomIt last, Compare comp = Compare()) {
     ++stack_level;
     if (last - first < 2) return;
     move_median_of_three_to_first(first, last, comp);
-    auto pivot = unguarded_partion_with_first_as_pivot(first, last, comp);
+    auto pivot = unguarded_partition_with_first_as_pivot(first, last, comp);
     quick_sort(first, pivot, comp);
     quick_sort(pivot + 1, last, comp);
 }
