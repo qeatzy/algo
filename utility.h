@@ -44,7 +44,25 @@ using std::array;
     // auto start = std::chrono::high_resolution_clock::now();
     // auto end = std::chrono::high_resolution_clock::now();
     // std::chrono::duration<double> diff = end-start;
-    // std::cout << diff.count() << " s\n";
+    // std::cout << diff.count() << " sec\n";
+
+class Timer {
+public:
+    Timer(): m_time{std::chrono::steady_clock::now()} {}
+    void reset() { m_time = std::chrono::steady_clock::now(); }
+    void clear() { reset(); }
+    void show() {
+        auto diff = timeit();
+        std::cout << diff.count() << " sec\n";
+    }
+private:
+    std::chrono::duration<double> timeit() {
+        auto old_time = m_time;
+        reset();
+        return m_time - old_time;
+    }
+    decltype(std::chrono::steady_clock::now()) m_time;
+};
 
 void wait() {
     char c; cin.get(c); if (c=='q') exit(1);
@@ -69,8 +87,8 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
     const bool wait_for_inspect = (sep == 'q');
     auto ending_mark = '\n';
     if (sep < 0) {
-        sep = ' ';
         if (sep < -1) ending_mark = ' ';
+        sep = ' ';
     } else if (!(sep == 0 || sep == ' ' || sep == '\n' || sep == '\t')) {
         sep = ' ';
         auto length = std::distance(first, last);
@@ -131,7 +149,7 @@ void print(const vector<vector<T>> &mat) {
     for (auto &vec: mat) print(vec);
 }
 
-iVec range(int start, int stop, int step) {
+std::vector<int> range(int start, int stop, int step) {
     /* generate a sequence.
      * step must **NOT** be zero.
      * TODO: refactor to generic to allow double parameters. Or restrict range to int, use
@@ -140,17 +158,17 @@ iVec range(int start, int stop, int step) {
     // static_assert(step != 0, "step must **NOT** be zero.");
     auto cmp = (step>0) ? [](int left, int right) { return left < right; }
                         : [](int left, int right) { return left > right; };
-    iVec res;
+    std::vector<int> res;
     while(cmp(start, stop)) {
         res.push_back(start);
         start += step;
     }
     return res;
 }
-iVec range(int start) {
+std::vector<int> range(int start) {
     return range(0, start, 1);
 }
-iVec range(int start, int stop) {
+std::vector<int> range(int start, int stop) {
     return range(start, stop, 1);
 }
 
