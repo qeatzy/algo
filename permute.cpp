@@ -1,5 +1,9 @@
 #include "utility.h"
 
+// http://wordaligned.org/articles/next-permutation#fn1link
+// https://code.google.com/codejam/contest/dashboard?c=186264#s=a&a=1
+// https://code.google.com/codejam/contest/dashboard?c=186264#s=p1
+
 template <typename RandomIt, typename T = typename std::iterator_traits<RandomIt>::value_type>
 void printPermute(RandomIt first, RandomIt mid, RandomIt last) {
     // print(first,mid,"",-2);
