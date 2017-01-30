@@ -84,7 +84,7 @@ void print(Iterator first, Iterator last, const char* description="", signed cha
             if (c == 'q') {
                 break;
             }
-        } else {
+        } else if (sep != 0) {
             std::cout << sep;
         }
     }
@@ -99,7 +99,7 @@ void print(const Container &vec, const char* description="", char sep=' ') {
 template <typename It>
 void print(It b, int n, char sep = ' ', const char* description="") {
     assert(n >= 0);
-    print(b, b + n, description, ' ');
+    print(b, b + n, description, sep);
 }
 
     // // example for print (with caveat.)
