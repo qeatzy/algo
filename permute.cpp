@@ -1,8 +1,168 @@
 #include "utility.h"
+int stack_level = 0;
+
+template <typename ForwardIt>
+void inplace_merge(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right_last) {
+    if (right == right_last) return;
+    // print(left, left_last, "", -2);
+    // print(right, right_last);
+    // wait();
+    // auto first = left, last = right_last;
+    for (auto left_prefix = right; left != left_last; ) {
+        if (*right < *left) {
+            std::iter_swap(left, right);
+            ++right;
+        }
+        ++left;
+        if (right == right_last) {  // test for right **must** precede test for left.
+            right = left_prefix;
+        }
+        if (left == left_last) {
+            left = left_prefix;
+            left_last = right;
+            left_prefix = right;
+        }
+    }
+}
+
+template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
+void merge(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right_last) {
+    // assert(sorted(left, left_last) && sorted(right, right_last));
+    std::vector<T> buf;
+    for (auto p = left; p != left_last; ++p) { buf.push_back(std::move(*p)); }
+    // for (auto p = left; p != left_last; ++p) { *p = T{}; }
+    auto old_right = right;
+    auto it = buf.begin(), it_end = buf.end();
+    for (; it != it_end && right != right_last;) {
+        if (*right < *it) {
+            *left = std::move(*right);
+            ++right;
+        } else {
+            *left = std::move(*it);
+            ++it;
+        }
+        // print(left, right_last);
+        // wait();
+        ++left;
+        if (left == left_last) {
+            left = old_right;
+            left_last = right_last;
+        }
+    }
+    if (right == right_last) {
+        for (; left != left_last; ++left) {
+            *left = std::move(*it);
+            ++it;
+        }
+        for (; it != it_end; ++it) {
+            *old_right = std::move(*it);
+            ++old_right;
+        }
+    }
+}
+
+namespace test {
+    void merge() {
+        std::vector<int> v = {9,4,6,8};
+        // std::vector<int> v = {6,4,8,9};
+        auto first = v.begin(), mid = first + 1, last = v.end();
+        // std::vector<int> v = {8,9,4,6};
+        // auto first = v.begin(), mid = first + 2, last = v.end();
+        // std::vector<int> v = {6,8,9,4};
+        // auto first = v.begin(), mid = first + 3, last = v.end();
+        print(v);
+        ::inplace_merge(first, mid, mid, last);
+        // ::merge(first, mid, mid, last);
+        print(v);
+    }
+}
 
 // http://wordaligned.org/articles/next-permutation#fn1link
 // https://code.google.com/codejam/contest/dashboard?c=186264#s=a&a=1
 // https://code.google.com/codejam/contest/dashboard?c=186264#s=p1
+
+// http://marknelson.us/2002/03/01/next-permutation/
+// Thomas Draper wrote me a while back and offered up some similar code that implements next_combination(). I've posted a copy here. I'll ask him to post a follow-up comment to explain in his own words a little mroe about it.
+// cd ~/code/algo && wget http://marknelson.us/attachments/next-permutation/NextCombination.tgz
+// wget may fail, download via browser then.
+// Hi Paul, Instead of next_permutation(), you need next_combination(), which unfortunately is not part of the standard library. However, this article comes up with a pretty good implementation of it: http://www.codeguru.com/cpp/cpp/algorithms/combinations/article.php/c5117/
+// Sean offered up the following alternative algorithm:
+//     #define N 20    // number of items
+//     #define R 10    // number of choices
+//     int next_combination(int c[])
+//     {
+//         int i = 0;
+//         while ( i <R-1 && c[i+1]==c[i]+1) // for each bump
+//             c[i] = i++;                 // fall back
+//         return N - ++c[i];              // push forward and verify
+//     }
+template <typename BidirectIt>
+bool nextCombination(BidirectIt first, BidirectIt mid, BidirectIt last) {
+    // assert(sorted(first, mid) && sorted(mid, last));
+    if (first == mid || mid == last) return false;
+    auto pre_last = last;
+    --pre_last;
+    if (!(*first < *pre_last)) {
+        std::rotate(first, mid, last);
+        return false;
+    }
+    auto left = std::lower_bound(first, mid, *pre_last);
+    --left;
+    auto right = std::upper_bound(mid, last, *left);
+    std::iter_swap(left, right);
+    ++left, ++right;
+    // merge(left, mid, right, last);
+    inplace_merge(left, mid, right, last);
+    return true;
+}
+// Nice article, Mark. But I was just wondering if you have come across any algorithms that list permutations such that the mirror images of strings already listed are not listed again. As in, while permuting 1234, my list must only include: 1234,1243,1324,1342,1423,1432,2134,2143,2413,3124 & 3214.
+// Well, lets say you have 120 permutations and you want permutation number 60. Using STL you woule have to walk through all of them step by step - wont you ? So I've written an implementation that gives you any permutation immideately, without recursion:
+// Thomas Nygreen said: Nice article! The original problem can be solved by first listing the seven possible combinations of numbers in the range 1-9 such that no numbers are repeated and the sum is 17:
+//     i:   {1, 7, 9}
+//     ii:  {2, 6, 9}
+//     iii: {2, 7, 8}
+//     iv:  {3, 5, 9}
+//     v:   {3, 6, 8}
+//     vi:  {4, 5, 8}
+//     vii: {4, 6, 7}
+// Exactly five of these must be included in the solution.
+// As there are no combinations containing both 5 and 6 or both 5 and 7, the only positions left for 5 are d and h.
+// There is only one combination containing 1, so 1 cannot be in any corner, and there are no combinations with both 8 and 9, so h and i cannot be 9.
+
+template <typename BidirectIt>
+bool nextPermutation(BidirectIt first, BidirectIt last) {
+// bool next_permutation(BidirectIt first, BidirectIt last) {
+    if (first == last || --last == first) return false;
+    ++stack_level;
+    cout << stack_level << ' ';
+    // cout << endl;
+    wait("permute\n");
+    // note that last is decremented if reach here.
+    auto p = last;
+    --p;
+    if (*p < *last) {
+        std::iter_swap(p, last);
+        return true;
+    } else {
+        auto pnext = last;
+        do {
+            --p; --pnext;
+        } while (pnext != first && !(*p < *pnext));
+        ++last; // last is restored to original value after previous decrement
+        if (pnext == first) {
+            std::reverse(first, last);
+            return false;
+        }
+        // from 07531 27531 47531 67531
+        // to   10357 31257 51347 71356
+        pnext = last;
+        while(!(*p < *--pnext)) { }
+        std::iter_swap(p, pnext);
+        ++p;
+        std::reverse(p, last);
+        return true;
+    }
+}
 
 template <typename RandomIt, typename T = typename std::iterator_traits<RandomIt>::value_type>
 void printPermute(RandomIt first, RandomIt mid, RandomIt last) {
@@ -117,7 +277,6 @@ int countEqual(ForwardIt first, ForwardIt last) {
     return k;
 }
 
-int stack_level = 0;
 template <typename ForwardIt, typename RandomIt>
 void printPermuteWithDuplicate(ForwardIt first, RandomIt buf, RandomIt buf_mid, RandomIt buf_last) {
     if (buf_mid == buf_last) {
@@ -125,7 +284,7 @@ void printPermuteWithDuplicate(ForwardIt first, RandomIt buf, RandomIt buf_mid, 
         auto it = *std::min_element(buf, buf_last);
         int n = std::distance(buf, buf_last);
         // print(it, n);
-        print(it, n, 0, "");
+        print(it, n, "", 0);
         // for (; buf != buf_last; ++buf) cout << *buf - it << " "; cout << endl;
         // print(buf, buf_last);
     } else {
@@ -163,80 +322,6 @@ void printStringPermuteWithDuplicate(string str) {
     // for (auto p = &buf[0], p_end = p + buf.size(); p != p_end; ++p) { address.push_back(p); }
     // printPermuteWithDuplicate(&str[0], &address[0], &address[0], &address[0] + address.size());
 }
-
-template <typename BidirectIt>
-bool nextPermutation(BidirectIt first, BidirectIt last) {
-// bool next_permutation(BidirectIt first, BidirectIt last) {
-    if (first == last || --last == first) return false;
-    ++stack_level;
-    cout << stack_level << ' ';
-    // cout << endl;
-    wait("permute\n");
-    // note that last is decremented if reach here.
-    auto p = last;
-    --p;
-    if (*p < *last) {
-        std::iter_swap(p, last);
-        return true;
-    } else {
-        // --first;
-        // while (true) {
-        auto pnext = last;
-        do {
-            --p; --pnext;
-        } while (pnext != first && !(*p < *pnext));
-            // if (p == first || *p < val) break;
-                // wait("loop 1\n");
-        ++last; // last is restored to original value after previous decrement
-        if (pnext == first) {
-            std::reverse(first, last);
-            return false;
-        }
-        else {
-            // from 07531 27531 47531 67531
-            // to   10357 31257 51347 71356
-            pnext = last;
-            while(!(*p < *--pnext)) { }
-            std::iter_swap(p, pnext);
-            ++p;
-            std::reverse(p, last);
-            return true;
-        }
-    }
-}
-
-// http://marknelson.us/2002/03/01/next-permutation/
-// Thomas Draper wrote me a while back and offered up some similar code that implements next_combination(). I've posted a copy here. I'll ask him to post a follow-up comment to explain in his own words a little mroe about it.
-// cd ~/code/algo && wget http://marknelson.us/attachments/next-permutation/NextCombination.tgz
-// wget may fail, download via browser then.
-// Hi Paul, Instead of next_permutation(), you need next_combination(), which unfortunately is not part of the standard library. However, this article comes up with a pretty good implementation of it: http://www.codeguru.com/cpp/cpp/algorithms/combinations/article.php/c5117/
-// Sean offered up the following alternative algorithm:
-//     #define N 20    // number of items
-//     #define R 10    // number of choices
-//     int next_combination(int c[])
-//     {
-//         int i = 0;
-//         while ( i <R-1 && c[i+1]==c[i]+1) // for each bump
-//             c[i] = i++;                 // fall back
-//         return N - ++c[i];              // push forward and verify
-//     }
-template <typename BidirectIt>
-bool next_combination(BidirectIt first, BidirectIt last) {
-    return false;
-}
-// Nice article, Mark. But I was just wondering if you have come across any algorithms that list permutations such that the mirror images of strings already listed are not listed again. As in, while permuting 1234, my list must only include: 1234,1243,1324,1342,1423,1432,2134,2143,2413,3124 & 3214.
-// Well, lets say you have 120 permutations and you want permutation number 60. Using STL you woule have to walk through all of them step by step - wont you ? So I've written an implementation that gives you any permutation immideately, without recursion:
-// Thomas Nygreen said: Nice article! The original problem can be solved by first listing the seven possible combinations of numbers in the range 1-9 such that no numbers are repeated and the sum is 17:
-//     i:   {1, 7, 9}
-//     ii:  {2, 6, 9}
-//     iii: {2, 7, 8}
-//     iv:  {3, 5, 9}
-//     v:   {3, 6, 8}
-//     vi:  {4, 5, 8}
-//     vii: {4, 6, 7}
-// Exactly five of these must be included in the solution.
-// As there are no combinations containing both 5 and 6 or both 5 and 7, the only positions left for 5 are d and h.
-// There is only one combination containing 1, so 1 cannot be in any corner, and there are no combinations with both 8 and 9, so h and i cannot be 9.
 
 // http://marknelson.us/attachments/next-permutation/NextCombination.tgz
 // next_combination Template
@@ -279,9 +364,22 @@ bool next_combination(BidirectionalIterator first, BidirectionalIterator k,
 
 namespace test {
     void next_combination() {
+        // int sep = ' ';
         std::vector<int> v = {1,2,2,3,5};
-        // do {
-        // } while (::next_combination());
+        int k = 3;
+        // auto v = range(1,10);
+        // int k = 3;
+        // std::vector<int> v = {1,2,2,4,4,6,8,9};
+        // int k = 4;
+        // std::string v = "ABCDEF";
+        // int k = 2; // sep = 0;
+        do {
+            auto first = v.begin(), mid = first + k, last = first + v.size();
+            print(first, mid, "",-2);
+            cout << "| ";
+            print(mid, last);
+        } while (::nextCombination(v.begin(), v.begin() + k, v.end()));
+        // } while (::next_combination(v.begin(), v.begin() + k, v.end()));
     }
     void next_permutation() {
         // std::vector<int> v = range(5);
@@ -345,8 +443,9 @@ namespace test {
 int main() {
     // test::printPermute();
     // test::selectMultiPos();
-    test::next_permutation();
-    // test::next_combination();
+    // test::next_permutation();
+    test::next_combination();
+    // test::merge();
     // test::printStringPermuteWithDuplicate();
         // std::vector<int> v = range(5);
         // print(v);
