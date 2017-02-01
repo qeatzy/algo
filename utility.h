@@ -5,13 +5,14 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <deque>
+// #include <deque>
+// #include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
 #include <algorithm>
 #include <numeric>
 #include <cmath>    // pow
-#include <valarray>
+// #include <valarray>
 #include <array>
 #include <iterator> // std::iterator_traits<Iterator>::value_type  difference_type  iterator_category  http://stackoverflow.com/a/1107235/3625404
 #include <utility>
@@ -20,9 +21,9 @@
 #include <climits>
 #include <cstdlib>  // strtoul, strtoull, strtol
 #include <cctype>   // isspace
-#include <ctime>
+// #include <ctime>
 #include <chrono>
-#include <regex>
+// #include <regex>
 #include <memory>   // smart pointers
 
 typedef std::vector<int> iVec;
