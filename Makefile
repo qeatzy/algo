@@ -11,6 +11,7 @@ RM       = rm -f
 VPATH = $(SRCDIR)
 
 # Normal makefile rules here
+# "cpp
 CXX=g++
 # CXXFLAGS=-g -std=c++11 -fext-numeric-literals -Wall -pedantic
 CXXFLAGS=-g -std=c++14 -fext-numeric-literals -Wall -Wno-comment -pedantic -O2
@@ -18,6 +19,16 @@ CXXFLAGS=-g -std=c++14 -fext-numeric-literals -Wall -Wno-comment -pedantic -O2
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
+# "java
+CLASSPATH=_test
+JCC=javac
+# JFLAGS=-g -d ../_test
+JFLAGS=-g -d .
+.java.class:
+	$(JCC) $(JFLAGS) ../$*.java
+.SUFFIXES: .java .class   # https://www.cs.swarthmore.edu/~newhall/unixhelp/javamakefiles.html
+CLASSES=*.java
+classes: $(CLASSES:.java=.class)
 
 #----- Begin Boilerplate
 endif
