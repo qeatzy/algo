@@ -1,10 +1,12 @@
 #ifndef UTILITY_H_INCLUDED   // include guard, http://www.cplusplus.com/forum/articles/10627/#msg49679
 #define UTILITY_H_INCLUDED 
+int DEBUG = 0;
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <set>
 // #include <deque>
 // #include <unordered_map>
 #include <string>
@@ -112,8 +114,13 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
     std::cout << ending_mark;
 }
 
-template <typename Container>
-void print(const Container &vec, std::string description="", char sep=' ') {
+// template <typename Container>
+template < template<typename ... > class Container, typename T>
+void print(const Container<T> &vec, std::string description="", char sep=' ') {
+    print(std::begin(vec), std::end(vec), description, sep);
+}
+template <typename T>
+void print(const std::initializer_list<T> &vec, std::string description="", char sep=' ') {
     print(std::begin(vec), std::end(vec), description, sep);
 }
 
@@ -174,7 +181,6 @@ std::vector<int> range(int start) {
 std::vector<int> range(int start, int stop) {
     return range(start, stop, 1);
 }
-
 // dVec range(double start, double stop, double step) {
 //     dVec vec;
 //     if (step == 0) {
@@ -198,6 +204,86 @@ std::vector<int> range(int start, int stop) {
 // std::vector<double> range(double stop) {
 //     return range(0, stop, 1);
 // }
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::set<T> makeSet(Iterator first, Iterator last) {
+    std::set<T> res;
+    for (; first != last; ++first) res.insert(*first);
+    return res;
+}
+// typename <typename Container, typename T = typename Container::value_type>
+template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+inline std::set<T> makeSet(Container<T> c) {
+    return makeSet(std::begin(c), std::end(c));
+}
+template <typename T>
+inline std::set<T> makeSet(const std::initializer_list<T> &c) {
+    return makeSet(std::begin(c), std::end(c));
+}
+template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
+    if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
+    auto lset = std::set<T>(lhs.begin(), lhs.end());
+    auto rset = std::set<T>(rhs.begin(), rhs.end());
+    return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
+}
+
+namespace test {
+    using ::print;
+    void makeSet() {
+        DEBUG = 2;
+        // auto s = makeSet("abdcccef");
+        auto s = ::makeSet(string("abdcccef"));
+        print(s);
+        auto s2 = ::makeSet(string("abef"));
+        cout << ((issubset(s2,s))? "includes" : "not includes") << endl;
+        auto sint = ::makeSet({2,3,5,8});
+        print(sint);
+    }
+}
+
+template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
+ForwardIt isSorted_until(ForwardIt first, ForwardIt last) {
+// ForwardIt is_sorted_until(ForwardIt first, ForwardIt last) {
+    if (first == last) return last;
+    auto next = first;
+    ++next;
+    for (; next != last && !(*next < *first); ++first, ++next) { }
+    return next;
+}
+// template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
+// inline bool isSorted(ForwardIt first, ForwardIt last) {
+// // inline bool is_sorted(ForwardIt first, ForwardIt last) {
+//     return is_sorted_until(first, last) == last;
+// }
+template < template<typename ... > class Container, typename T>
+inline bool is_sorted(Container<T> c) {
+    return is_sorted(std::begin(c), std::end(c));
+}
+template <typename T>
+inline bool is_sorted(std::initializer_list<T> c) {
+    // return is_sorted(std::begin(c), std::end(c));    // deduction failed for STL. const's fault??  eg, const int*
+    return isSorted_until(std::begin(c), std::end(c)) == std::end(c);
+}
+
+namespace test {
+    using::range;
+    void is_sorted() {
+    cout << std::boolalpha;
+        print(range(4),"",-2);
+        cout << "sorted? " << ::is_sorted(range(4)) << endl;
+        print({1,3,2,5},"",-2);
+        cout << "sorted? " << ::is_sorted({1,3,2,5}) << endl;
+    }
+}
+
+namespace test {
+    void deduction() {
+        print({2,3,5,8});
+        // print({2,3.1,5,8}); // error, type deduction failed.
+        print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
+    }
+}
 
 bool isPrime(int n) { 
     if (n <= 1) return false;
