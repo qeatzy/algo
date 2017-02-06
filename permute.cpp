@@ -1,5 +1,15 @@
 #include "utility.h"
-int stack_level = 0;
+
+template <typename ForwardIt>
+void inplace_merge_new(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right_last) {
+    if (right == right_last) return;
+    // loop invariants: left != left_last && right != right_last && [prefix, right) < [left, left_last)
+    for (auto prefix = right; left != left_last; ) {
+        if (prefix == right) { // [prefix,right) is empty.
+        } else {
+        }
+    }
+    3 4 5 6 | 1 2 7 8
 
 template <typename ForwardIt>
 void inplace_merge(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right_last) {
@@ -63,6 +73,15 @@ void merge(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right
 
 namespace test {
     void merge() {
+        auto test_case = []() {
+            std::vector<std::vector<int>> res;
+            res.push_back({3,4,5,6,  1,2,7,8});
+            res.push_back({9,  4,6,8});
+            res.push_back({6,  4,8,9});
+            res.push_back({8,9,  4,6});
+            res.push_back({6,8,9,  4});
+            return res;
+        };
         std::vector<int> v = {9,4,6,8};
         // std::vector<int> v = {6,4,8,9};
         auto first = v.begin(), mid = first + 1, last = v.end();
@@ -106,6 +125,8 @@ bool nextCombination(BidirectIt first, BidirectIt mid, BidirectIt last) {
         std::rotate(first, mid, last);
         return false;
     }
+// in left half find trailing item that is smaller than *last. worst case *first.
+// then increase the found one. change to first item larger than it in the right half. worst case *last.
     auto left = std::lower_bound(first, mid, *pre_last);
     --left;
     auto right = std::upper_bound(mid, last, *left);
@@ -133,10 +154,12 @@ template <typename BidirectIt>
 bool nextPermutation(BidirectIt first, BidirectIt last) {
 // bool next_permutation(BidirectIt first, BidirectIt last) {
     if (first == last || --last == first) return false;
-    ++stack_level;
-    cout << stack_level << ' ';
-    // cout << endl;
-    wait("permute\n");
+    if (DEBUG) {
+        ++stack_level;
+        cout << stack_level << ' ';
+        // cout << endl;
+        wait("permute\n");
+    }
     // note that last is decremented if reach here.
     auto p = last;
     --p;
@@ -365,7 +388,8 @@ bool next_combination(BidirectionalIterator first, BidirectionalIterator k,
 namespace test {
     void next_combination() {
         // int sep = ' ';
-        std::vector<int> v = {1,2,2,3,5};
+        // std::vector<int> v = {1,2,2,3,5};
+        auto v = range(1,8);
         int k = 3;
         // auto v = range(1,10);
         // int k = 3;
@@ -375,8 +399,7 @@ namespace test {
         // int k = 2; // sep = 0;
         do {
             auto first = v.begin(), mid = first + k, last = first + v.size();
-            print(first, mid, "",-2);
-            cout << "| ";
+            print(first, mid, "",-1,"|");
             print(mid, last);
         } while (::nextCombination(v.begin(), v.begin() + k, v.end()));
         // } while (::next_combination(v.begin(), v.begin() + k, v.end()));
@@ -443,8 +466,8 @@ namespace test {
 int main() {
     // test::printPermute();
     // test::selectMultiPos();
-    // test::next_permutation();
-    test::next_combination();
+    test::next_permutation();
+    // test::next_combination();
     // test::merge();
     // test::printStringPermuteWithDuplicate();
         // std::vector<int> v = range(5);

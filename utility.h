@@ -1,6 +1,6 @@
 #ifndef UTILITY_H_INCLUDED   // include guard, http://www.cplusplus.com/forum/articles/10627/#msg49679
 #define UTILITY_H_INCLUDED 
-int DEBUG = 0;
+int DEBUG = 0, stack_level = 0;
 
 #include <iostream>
 #include <fstream>
@@ -81,19 +81,30 @@ inline int sgn(int x) { return (x>0) - (x<0); }
 //     return (T(0) < val) - (val < T(0));
 // }
 
+// TODO
+// c++ format function similar to python
+// http://stackoverflow.com/questions/10410023/string-format-alternative-in-c
+// http://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
+// http://stackoverflow.com/questions/13969117/wxstring-is-there-any-c-c-code-that-implements-string-formatting-using-python
+// https://github.com/fmtlib/fmt
+
 template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
-void print(Iterator first, Iterator last, std::string description="", signed char sep=' ') { // char can be either signed or unsigned.
+void print(Iterator first, Iterator last, std::string description="", signed char sep=' ', std::string trailing_desc = "") { // char can be either signed or unsigned.
+    // if (sep != 0) {
+    //     cout << "sep = " << int(sep);// << endl;
+    //     wait();
+    // }
     if (description != string()) {
         cout << description << ": ";
         if (sep == '\n') cout << '\n';
     }
     const bool wait_for_inspect = (sep == 'q');
     auto ending_mark = '\n';
-    if (sep < 0) {
-        if (sep < -1) ending_mark = ' ';
-        else if (sep == -2) ending_mark = 0;
-        else ending_mark = ' ';
-        sep = ' ';
+    if (sep <= 0) { // negative -- no newline. 0 or negative and even -- no separator.
+        if (sep == 0) { sep = 0; ending_mark = '\n'; }
+        else if (sep == -1) { sep = ' '; ending_mark = 0; }
+        else if (sep == -2) { sep = 0; ending_mark = ' '; }
+        else { sep = ' '; ending_mark = ' '; }
     } else if (!(sep == 0 || sep == ' ' || sep == '\n' || sep == '\t')) {
         sep = ' ';
         auto length = std::distance(first, last);
@@ -111,23 +122,30 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
             std::cout << sep;
         }
     }
-    std::cout << ending_mark;
+    // if (ending_mark != '\n' && trailing_desc != "" && ending_mark != 0) {
+    if (trailing_desc != "") {
+        if (sep == 0) cout << ' ';
+        cout << trailing_desc;// << endl;
+        cout << ' ';
+    }
+    if (ending_mark)
+        std::cout << ending_mark;
 }
 
 // template <typename Container>
 template < template<typename ... > class Container, typename T>
-void print(const Container<T> &vec, std::string description="", char sep=' ') {
-    print(std::begin(vec), std::end(vec), description, sep);
+void print(const Container<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(vec), std::end(vec), description, sep, trailing_desc);
 }
 template <typename T>
-void print(const std::initializer_list<T> &vec, std::string description="", char sep=' ') {
-    print(std::begin(vec), std::end(vec), description, sep);
+void print(const std::initializer_list<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(vec), std::end(vec), description, sep, trailing_desc);
 }
 
 template <typename It>
-void print(It b, int n, std::string description="", char sep = ' ') {
+void print(It b, int n, std::string description="", signed char sep = ' ', std::string trailing_desc = "") {
     assert(n >= 0);
-    print(b, b + n, description, sep);
+    print(b, b + n, description, sep, trailing_desc);
 }
 
     // // example for print (with caveat.)
@@ -230,6 +248,10 @@ bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
 
 namespace test {
     using ::print;
+    void init(int DEBUG = 0) {
+        ::DEBUG = DEBUG;
+        cout << std::boolalpha;
+    }
     void makeSet() {
         DEBUG = 2;
         // auto s = makeSet("abdcccef");
@@ -257,11 +279,11 @@ ForwardIt isSorted_until(ForwardIt first, ForwardIt last) {
 //     return is_sorted_until(first, last) == last;
 // }
 template < template<typename ... > class Container, typename T>
-inline bool is_sorted(Container<T> c) {
+inline bool is_sorted(const Container<T> &c) {
     return is_sorted(std::begin(c), std::end(c));
 }
 template <typename T>
-inline bool is_sorted(std::initializer_list<T> c) {
+inline bool is_sorted(const std::initializer_list<T> &c) {
     // return is_sorted(std::begin(c), std::end(c));    // deduction failed for STL. const's fault??  eg, const int*
     return isSorted_until(std::begin(c), std::end(c)) == std::end(c);
 }
@@ -269,7 +291,6 @@ inline bool is_sorted(std::initializer_list<T> c) {
 namespace test {
     using::range;
     void is_sorted() {
-    cout << std::boolalpha;
         print(range(4),"",-2);
         cout << "sorted? " << ::is_sorted(range(4)) << endl;
         print({1,3,2,5},"",-2);
@@ -370,7 +391,7 @@ class Prime {
 // below are vocabulary that aid vim completion.
 // extensibility
 /**
-    out_of_range  overflow_error
+    bad_alloc out_of_range  overflow_error
     throw std::invalid_argument( "received negative value" );
     catch(const std::invalid_argument& e) {   // And you should always catch exceptions as const? comment in http://stackoverflow.com/a/8480675/3625404
 **/

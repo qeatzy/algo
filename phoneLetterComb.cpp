@@ -27,13 +27,15 @@
         // if (DEBUG) assert(issubset(string(first, last), alphabet));
         std::vector<std::string> res;
         if (first == last) return res;
-        auto const &str = phoneTable[*--last - '2'];
+        --last;
+        // ++first;
         auto subRes = phoneLetterComb_recurse_iter(first, last);
         if (subRes.empty()) { subRes.emplace_back(""); } // fix to identity(1, not 0) for trivial recurse. delegate-and-fix instead of pre-check.
-        // for (auto ch: phoneTable[digit - '2'])
-        for (auto ch: str) {
             for (auto const &prefix: subRes) {
+        for (auto ch: phoneTable[*last - '2']) {
+        // for (auto ch: phoneTable[*(first-1) - '2']) {
                 res.push_back(prefix + ch);
+                // res.push_back(ch + prefix);
             }
         }
         return res;
@@ -66,15 +68,15 @@
 
     std::vector<std::string> phoneLetterComb(string digits) {
         // return phoneLetterComb_loop(digits);
-        // return phoneLetterComb_recurse(digits);
-        return phoneLetterComb_backtrack(digits);
+        return phoneLetterComb_recurse(digits);
+        // return phoneLetterComb_backtrack(digits);
     }
 
 namespace test {
     void phoneLetterComb() {
         auto test_case = []() {
             std::vector<std::string> res;
-            res.push_back("23");
+            res.push_back("234");
             return res;
         };
         for (auto v: test_case()) {
