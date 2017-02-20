@@ -9,8 +9,12 @@ void inplace_merge_new(ForwardIt left, ForwardIt left_last, ForwardIt right, For
         } else {
         }
     }
-    3 4 5 6 | 1 2 7 8
+}//    3 4 5 6 | 1 2 7 8
 
+// in place merge sort? http://stackoverflow.com/a/2571104/3625404   and   http://stackoverflow.com/a/2126289/3625404     http://stackoverflow.com/a/2128992/3625404
+// nice graph of merge?  The trick is to swap the largest elements in A for the smallest elements in B. recursively applying rotations.  https://xinok.wordpress.com/2014/08/17/in-place-merge-sort-demystified-2/
+// @DonalFellows: jk is exactly right; quicksort CAN be implemented to be stable, without extra space cost. Check Wikipedia.  comment in http://stackoverflow.com/a/2571094/3625404
+// After further research, it appears that there is not a single definition of "in-place" (see en.wikipedia.org/wiki/In-place_algorithm). The traditional definition used by algorithm theorists is one that uses O(1) extra storage, whereas the one used by the C++ standard is apparently one that uses the same storage for input and output.
 template <typename ForwardIt>
 void inplace_merge(ForwardIt left, ForwardIt left_last, ForwardIt right, ForwardIt right_last) {
     if (right == right_last) return;
@@ -76,23 +80,24 @@ namespace test {
         auto test_case = []() {
             std::vector<std::vector<int>> res;
             res.push_back({3,4,5,6,  1,2,7,8});
-            res.push_back({9,  4,6,8});
-            res.push_back({6,  4,8,9});
-            res.push_back({8,9,  4,6});
-            res.push_back({6,8,9,  4});
+            res.push_back({15,29,32,64,91, 11,19,27,80,89});
+            res.push_back({4,10,70,10,30,69,96,100});
+            res.push_back({10,15,19,23,26,32,  4,9,16,30,39,47});
+            // res.push_back({9,  4,6,8});
+            // res.push_back({6,  4,8,9});
+            // res.push_back({8,9,  4,6});
+            // res.push_back({6,8,9,  4});
             return res;
         };
-        std::vector<int> v = {9,4,6,8};
-        // std::vector<int> v = {6,4,8,9};
-        auto first = v.begin(), mid = first + 1, last = v.end();
-        // std::vector<int> v = {8,9,4,6};
-        // auto first = v.begin(), mid = first + 2, last = v.end();
-        // std::vector<int> v = {6,8,9,4};
-        // auto first = v.begin(), mid = first + 3, last = v.end();
-        print(v);
-        ::inplace_merge(first, mid, mid, last);
-        // ::merge(first, mid, mid, last);
-        print(v);
+        for (auto &v: test_case()) {
+            auto first = v.begin(), last = v.end();
+            auto mid = isSorted_until(first, last);
+            assert(is_sorted(mid, last));
+            print(first, mid, "",-1,"|"); print(mid, last);
+            // ::merge(first, mid, mid, last);
+            ::inplace_merge(first, mid, mid, last);
+            print(first, mid, "",-1,"|"); print(mid, last);
+        }
     }
 }
 
@@ -466,9 +471,9 @@ namespace test {
 int main() {
     // test::printPermute();
     // test::selectMultiPos();
-    test::next_permutation();
+    // test::next_permutation();
     // test::next_combination();
-    // test::merge();
+    test::merge();
     // test::printStringPermuteWithDuplicate();
         // std::vector<int> v = range(5);
         // print(v);

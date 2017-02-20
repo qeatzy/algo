@@ -6,8 +6,9 @@ int DEBUG = 0, stack_level = 0;
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <set>
 // #include <deque>
+#include <set>
+#include <map>
 // #include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
@@ -173,8 +174,9 @@ void print<double>(const std::vector<double> & vec) {
 */
 
 template <typename T>
-void print(const vector<vector<T>> &mat) {
-    for (auto &vec: mat) print(vec);
+void print(const vector<vector<T>> &mat, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    if (!description.empty()) cout << description << ": " << endl;
+    for (auto &vec: mat) print(vec, "", sep, trailing_desc);
 }
 
 std::vector<int> range(int start, int stop, int step) {
@@ -198,6 +200,9 @@ std::vector<int> range(int start) {
 }
 std::vector<int> range(int start, int stop) {
     return range(start, stop, 1);
+}
+std::vector<int> rrange(int start, int stop, int step = 1) { // similar to colon operator in R, inclusive on both side.
+    return range(start, stop + step, step);
 }
 // dVec range(double start, double stop, double step) {
 //     dVec vec;
@@ -391,7 +396,8 @@ class Prime {
 // below are vocabulary that aid vim completion.
 // extensibility
 /**
-    bad_alloc out_of_range  overflow_error
+    runtime_error overflow_error
+    bad_alloc out_of_range invalid_argument
     throw std::invalid_argument( "received negative value" );
     catch(const std::invalid_argument& e) {   // And you should always catch exceptions as const? comment in http://stackoverflow.com/a/8480675/3625404
 **/
