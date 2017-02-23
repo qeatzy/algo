@@ -2,5 +2,9 @@
 *.pyc
 *.class
 /tmp*
+# input.data at current directory, used as redirect of c/c++ standard input, eg, `./_test/cf.exe < input.data`
+/input.data
+# .h.gch gcc pre-compiled header, only one can be used in a translation unit.
+*.h.gch
 *.exe.stackdump
 *.stackdump
