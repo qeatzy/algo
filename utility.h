@@ -6,10 +6,12 @@ int DEBUG = 0, stack_level = 0;
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <queue>
 // #include <deque>
 #include <set>
 #include <map>
-// #include <unordered_map>
+#include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
 #include <algorithm>
@@ -55,9 +57,9 @@ public:
     Timer(): m_time{std::chrono::steady_clock::now()} {}
     void reset() { m_time = std::chrono::steady_clock::now(); }
     void clear() { reset(); }
-    void show() {
+    void show(std::string description="") {
         auto diff = timeit();
-        std::cout << diff.count() << " sec\n";
+        std::cout << "   " << diff.count() << " sec.\t-- " << description << endl;
     }
 private:
     std::chrono::duration<double> timeit() {
@@ -133,9 +135,10 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
         std::cout << ending_mark;
 }
 
-// template <typename Container>
-template < template<typename ... > class Container, typename T>
-void print(const Container<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+// template < template<typename ... > class Container>
+// void print(const Container<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+template <typename Container>
+void print(const Container &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
     print(std::begin(vec), std::end(vec), description, sep, trailing_desc);
 }
 template <typename T>
@@ -147,6 +150,12 @@ template <typename It>
 void print(It b, int n, std::string description="", signed char sep = ' ', std::string trailing_desc = "") {
     assert(n >= 0);
     print(b, b + n, description, sep, trailing_desc);
+}
+
+template <typename T>
+void print(const vector<vector<T>> &mat, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    if (!description.empty()) cout << description << ": " << endl;
+    for (auto &vec: mat) print(vec, "", sep, trailing_desc);
 }
 
     // // example for print (with caveat.)
@@ -172,12 +181,6 @@ void print<double>(const std::vector<double> & vec) {
     putchar('\n');
 }
 */
-
-template <typename T>
-void print(const vector<vector<T>> &mat, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
-    if (!description.empty()) cout << description << ": " << endl;
-    for (auto &vec: mat) print(vec, "", sep, trailing_desc);
-}
 
 std::vector<int> range(int start, int stop, int step) {
     /* generate a sequence.
@@ -228,6 +231,29 @@ std::vector<int> rrange(int start, int stop, int step = 1) { // similar to colon
 //     return range(0, stop, 1);
 // }
 
+template <typename T>
+std::vector<T> operator*(const std::vector<T> &v, int k) {
+    k = std::max(0, k);
+    std::vector<T> res(v.size() * k);
+    for (auto p = res.begin(); k > 0; --k) {
+        for (auto x: v) *p++ = x;
+    }
+    return res;
+}
+template <typename T>
+std::vector<T> operator+(const std::vector<T> &lhs, const std::vector<T> &rhs) {
+    std::vector<T> res = lhs;
+    res.reserve(lhs.size() + rhs.size());
+    for (const auto &x: rhs) { res.push_back(x); }
+    return res;
+}
+
+template <typename T1, typename T2>
+std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &pair) {
+    os << pair.first << " " << pair.second << ", ";
+    return os;
+}
+
 template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
 std::set<T> makeSet(Iterator first, Iterator last) {
     std::set<T> res;
@@ -245,28 +271,78 @@ inline std::set<T> makeSet(const std::initializer_list<T> &c) {
 }
 template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
 bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
-    if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
+    // if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
     auto lset = std::set<T>(lhs.begin(), lhs.end());
     auto rset = std::set<T>(rhs.begin(), rhs.end());
     return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
 }
 
-namespace test {
-    using ::print;
-    void init(int DEBUG = 0) {
-        ::DEBUG = DEBUG;
-        cout << std::boolalpha;
+template <typename T>
+std::vector<T> makeVec(const std::initializer_list<T> &c) {
+    return std::vector<T>(c);
+}
+template <typename Iterator,
+          typename UnaryFunc>
+auto makeVec(Iterator first, Iterator last, UnaryFunc f) {
+    std::vector<std::decay_t<decltype(f(*first))>> res;
+    for (; first != last; ++first) res.push_back(f(*first));
+    return res;
+}
+template <typename Iterator,
+          typename UnaryFunc>
+auto imakeVec(Iterator first, Iterator last, UnaryFunc f) { // i for iterator, -- f's parameter is iterator
+    std::vector<std::decay_t<decltype(f(first))>> res;
+    for (; first != last; ++first) res.push_back(f(first));
+    return res;
+}
+template <typename Container, typename T = typename Container::value_type,
+          typename UnaryFunc>
+inline auto makeVec(const Container &vec, UnaryFunc f) {
+    return makeVec(std::begin(vec), std::end(vec), f);
+}
+template <typename T,
+          typename UnaryFunc>
+inline auto makeVec(const std::initializer_list<T> &c, UnaryFunc f) {
+    return makeVec(std::begin(c), std::end(c), f);
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::unordered_map<T,int> uCounter(Iterator first, Iterator last) {
+    std::unordered_map<T,int> res;
+    for (; first != last; ++first) {
+        ++res[*first];  // value-initialization. http://stackoverflow.com/a/12965621/3625404  http://stackoverflow.com/a/2667376/3625404
+        // auto p = res.find(*first);
+        // if (p == res.end()) res[*first] = 1;
+        // else ++p->second;
     }
-    void makeSet() {
-        DEBUG = 2;
-        // auto s = makeSet("abdcccef");
-        auto s = ::makeSet(string("abdcccef"));
-        print(s);
-        auto s2 = ::makeSet(string("abef"));
-        cout << ((issubset(s2,s))? "includes" : "not includes") << endl;
-        auto sint = ::makeSet({2,3,5,8});
-        print(sint);
-    }
+    return res;
+}
+// template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+// inline std::unordered_map<T,int> uCounter(Container<T> c) {
+template <typename Container, typename T = typename Container::value_type>
+inline std::unordered_map<T,int> uCounter(Container c) {
+    return uCounter(std::begin(c), std::end(c));
+}
+template <typename T>
+inline std::unordered_map<T,int> uCounter(const std::initializer_list<T> &c) {
+    return uCounter(std::begin(c), std::end(c));
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::map<T,int> Rank(Iterator first, Iterator last) {
+    std::map<T,int> res;
+    for (; first != last; ++first) res[*first];
+    int rank = 0;
+    for(auto &x: res) x.second = rank++;
+    return res;
+}
+template <typename Container>
+auto Rank(const Container &c) {
+    return Rank(std::begin(c), std::end(c));
+}
+template <typename T>
+auto Rank(const std::initializer_list<T> &c) {
+    return Rank(std::begin(c), std::end(c));
 }
 
 template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
@@ -293,6 +369,64 @@ inline bool is_sorted(const std::initializer_list<T> &c) {
     return isSorted_until(std::begin(c), std::end(c)) == std::end(c);
 }
 
+vector<string> split(const string &s, char delim) {
+    vector<string> res;
+    auto it = s.begin(), last = s.end();
+    for (;;) {
+        for (; it != last && *it == delim; ++it) {}
+        if (it == last) break;
+        auto it_end = it;
+        for (; ++it_end != last && *it_end != delim;) {}
+        res.emplace_back(it, it_end);
+        it = it_end;
+    }
+    return res;
+}
+string join(const vector<string> &vec, const string &sep) {
+    string res;
+    if (!vec.empty()) {
+        res += vec[0];
+        for (size_t i = 1, sz = vec.size(); i < sz; ++i) {
+            res += sep;
+            res += vec[i];
+        }
+    }
+    return res;
+}
+
+template <typename Container, typename T = typename Container::value_type>
+void trimAll(Container &c, T delim) {
+    if (!c.empty()) {
+        typename Container::iterator d = c.begin(), last = c.end(), p;
+        // cout << "sz = " << c.size() << endl;
+        for (; last != d && *--last == delim;) {}
+        if (!(last == d && *last == delim)) ++last; // trim trailing delim(s).
+        // cout << "sz = " << last - c.begin() << " -- after trim trailing" << endl;
+        for (; d != last && *d != delim;) { // skip leading words that are already in place.
+            for (; ++d != last && *d != delim;) {}
+            if (d == last) break;
+            ++d;
+        }
+        // assert(d <= last);
+        for (p = d;;) {
+            // cout << "index = " << p - c.begin() << endl;
+            for (; p != last && *p == delim; ++p) {}
+            for (; p != last && *p != delim; ++p, ++d) *d = std::move(*p);
+            if (p == last) break;
+            *d++ = std::move(*p++);
+        }
+        c.resize(d - c.begin());
+    }
+}
+
+namespace test {
+    using ::print;
+    void init(int DEBUG = 0) {
+        ::DEBUG = DEBUG;
+        cout << std::boolalpha;
+    }
+}
+
 namespace test {
     using::range;
     void is_sorted() {
@@ -308,6 +442,26 @@ namespace test {
         print({2,3,5,8});
         // print({2,3.1,5,8}); // error, type deduction failed.
         print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
+    }
+    void divmod(int caseNo = 0, int m = 5, int n = 3) {
+        std::vector<std::pair<int,int>> vec;
+        if (caseNo == 1) // minuend negated, subtrahend remain same
+            vec = {{m,n},{-m,n}};
+        else // default, all four cases
+            vec = {{m,n},{m,-n},{-m,n},{-m,-n}};
+        for (auto x: vec) {
+            int m = x.first, n = x.second;
+            // cout << m << " / " << n << " = " << m / n << ",\t" << m << " % " << n << " = " << m % n << endl;
+            printf("%2d / %2d = %2d, %2d %% %2d = %2d \n", m,n,m/n,m,n,m%n);
+        }
+    }
+}
+
+namespace test {
+    void nan_float() {
+        float x = 1.1;
+        if (x != 1.1)
+            printf("OMG! Floats suck!\n");
     }
 }
 
