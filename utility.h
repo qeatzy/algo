@@ -293,6 +293,31 @@ inline bool is_sorted(const std::initializer_list<T> &c) {
     return isSorted_until(std::begin(c), std::end(c)) == std::end(c);
 }
 
+vector<string> split(const string &s, char delim) {
+    vector<string> res;
+    auto it = s.begin(), last = s.end();
+    for (;;) {
+        for (; it != last && *it == delim; ++it) {}
+        if (it == last) break;
+        auto it_end = it;
+        for (; ++it_end != last && *it_end != delim;) {}
+        res.emplace_back(it, it_end);
+        it = it_end;
+    }
+    return res;
+}
+string join(const vector<string> &vec, const string &sep) {
+    string res;
+    if (!vec.empty()) {
+        res += vec[0];
+        for (size_t i = 1, sz = vec.size(); i < sz; ++i) {
+            res += sep;
+            res += vec[i];
+        }
+    }
+    return res;
+}
+
 namespace test {
     using::range;
     void is_sorted() {
