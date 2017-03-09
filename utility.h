@@ -6,6 +6,7 @@ int DEBUG = 0, stack_level = 0;
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <queue>
 // #include <deque>
 #include <set>
 #include <map>
@@ -55,9 +56,9 @@ public:
     Timer(): m_time{std::chrono::steady_clock::now()} {}
     void reset() { m_time = std::chrono::steady_clock::now(); }
     void clear() { reset(); }
-    void show() {
+    void show(std::string description="") {
         auto diff = timeit();
-        std::cout << diff.count() << " sec\n";
+        std::cout << "   " << diff.count() << " sec.\t-- " << description << endl;
     }
 private:
     std::chrono::duration<double> timeit() {
@@ -229,6 +230,23 @@ std::vector<int> rrange(int start, int stop, int step = 1) { // similar to colon
 //     return range(0, stop, 1);
 // }
 
+template <typename T>
+std::vector<T> operator*(const std::vector<T> &v, int k) {
+    k = std::max(0, k);
+    std::vector<T> res(v.size() * k);
+    for (auto p = res.begin(); k > 0; --k) {
+        for (auto x: v) *p++ = x;
+    }
+    return res;
+}
+template <typename T>
+std::vector<T> operator+(const std::vector<T> &lhs, const std::vector<T> &rhs) {
+    std::vector<T> res = lhs;
+    res.reserve(lhs.size() + rhs.size());
+    for (const auto &x: rhs) { res.push_back(x); }
+    return res;
+}
+
 template <typename T1, typename T2>
 std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &pair) {
     os << pair.first << " " << pair.second << ", ";
@@ -258,6 +276,10 @@ bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
     return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
 }
 
+template <typename T>
+std::vector<T> makeVec(const std::initializer_list<T> &c) {
+    return std::vector<T>(c);
+}
 template <typename Iterator,
           typename UnaryFunc>
 auto makeVec(Iterator first, Iterator last, UnaryFunc f) {
@@ -303,6 +325,23 @@ inline std::unordered_map<T,int> uCounter(Container c) {
 template <typename T>
 inline std::unordered_map<T,int> uCounter(const std::initializer_list<T> &c) {
     return uCounter(std::begin(c), std::end(c));
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::map<T,int> Rank(Iterator first, Iterator last) {
+    std::map<T,int> res;
+    for (; first != last; ++first) res[*first];
+    int rank = 0;
+    for(auto &x: res) x.second = rank++;
+    return res;
+}
+template <typename Container>
+auto Rank(const Container &c) {
+    return Rank(std::begin(c), std::end(c));
+}
+template <typename T>
+auto Rank(const std::initializer_list<T> &c) {
+    return Rank(std::begin(c), std::end(c));
 }
 
 template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
@@ -352,6 +391,31 @@ string join(const vector<string> &vec, const string &sep) {
         }
     }
     return res;
+}
+
+template <typename Container, typename T = typename Container::value_type>
+void trimAll(Container &c, T delim) {
+    if (!c.empty()) {
+        typename Container::iterator d = c.begin(), last = c.end(), p;
+        // cout << "sz = " << c.size() << endl;
+        for (; last != d && *--last == delim;) {}
+        if (!(last == d && *last == delim)) ++last; // trim trailing delim(s).
+        // cout << "sz = " << last - c.begin() << " -- after trim trailing" << endl;
+        for (; d != last && *d != delim;) { // skip leading words that are already in place.
+            for (; ++d != last && *d != delim;) {}
+            if (d == last) break;
+            ++d;
+        }
+        // assert(d <= last);
+        for (p = d;;) {
+            // cout << "index = " << p - c.begin() << endl;
+            for (; p != last && *p == delim; ++p) {}
+            for (; p != last && *p != delim; ++p, ++d) *d = std::move(*p);
+            if (p == last) break;
+            *d++ = std::move(*p++);
+        }
+        c.resize(d - c.begin());
+    }
 }
 
 namespace test {
