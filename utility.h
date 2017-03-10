@@ -10,6 +10,7 @@ int DEBUG = 0, stack_level = 0;
 // #include <deque>
 #include <set>
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
@@ -270,7 +271,7 @@ inline std::set<T> makeSet(const std::initializer_list<T> &c) {
 }
 template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
 bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
-    if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
+    // if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
     auto lset = std::set<T>(lhs.begin(), lhs.end());
     auto rset = std::set<T>(rhs.begin(), rhs.end());
     return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
@@ -441,6 +442,18 @@ namespace test {
         print({2,3,5,8});
         // print({2,3.1,5,8}); // error, type deduction failed.
         print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
+    }
+    void divmod(int caseNo = 0, int m = 5, int n = 3) {
+        std::vector<std::pair<int,int>> vec;
+        if (caseNo == 1) // minuend negated, subtrahend remain same
+            vec = {{m,n},{-m,n}};
+        else // default, all four cases
+            vec = {{m,n},{m,-n},{-m,n},{-m,-n}};
+        for (auto x: vec) {
+            int m = x.first, n = x.second;
+            // cout << m << " / " << n << " = " << m / n << ",\t" << m << " % " << n << " = " << m % n << endl;
+            printf("%2d / %2d = %2d, %2d %% %2d = %2d \n", m,n,m/n,m,n,m%n);
+        }
     }
 }
 
