@@ -1,17 +1,23 @@
 #ifndef UTILITY_H_INCLUDED   // include guard, http://www.cplusplus.com/forum/articles/10627/#msg49679
 #define UTILITY_H_INCLUDED 
+int DEBUG = 0, stack_level = 0;
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <deque>
+#include <queue>
+// #include <deque>
+#include <set>
+#include <map>
+#include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
 #include <algorithm>
 #include <numeric>
 #include <cmath>    // pow
-#include <valarray>
+// #include <valarray>
 #include <array>
 #include <iterator> // std::iterator_traits<Iterator>::value_type  difference_type  iterator_category  http://stackoverflow.com/a/1107235/3625404
 #include <utility>
@@ -20,9 +26,9 @@
 #include <climits>
 #include <cstdlib>  // strtoul, strtoull, strtol
 #include <cctype>   // isspace
-#include <ctime>
+// #include <ctime>
 #include <chrono>
-#include <regex>
+// #include <regex>
 #include <memory>   // smart pointers
 
 typedef std::vector<int> iVec;
@@ -51,9 +57,9 @@ public:
     Timer(): m_time{std::chrono::steady_clock::now()} {}
     void reset() { m_time = std::chrono::steady_clock::now(); }
     void clear() { reset(); }
-    void show() {
+    void show(std::string description="") {
         auto diff = timeit();
-        std::cout << diff.count() << " sec\n";
+        std::cout << "   " << diff.count() << " sec.\t-- " << description << endl;
     }
 private:
     std::chrono::duration<double> timeit() {
@@ -78,17 +84,30 @@ inline int sgn(int x) { return (x>0) - (x<0); }
 //     return (T(0) < val) - (val < T(0));
 // }
 
+// TODO
+// c++ format function similar to python
+// http://stackoverflow.com/questions/10410023/string-format-alternative-in-c
+// http://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
+// http://stackoverflow.com/questions/13969117/wxstring-is-there-any-c-c-code-that-implements-string-formatting-using-python
+// https://github.com/fmtlib/fmt
+
 template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
-void print(Iterator first, Iterator last, std::string description="", signed char sep=' ') { // char can be either signed or unsigned.
+void print(Iterator first, Iterator last, std::string description="", signed char sep=' ', std::string trailing_desc = "") { // char can be either signed or unsigned.
+    // if (sep != 0) {
+    //     cout << "sep = " << int(sep);// << endl;
+    //     wait();
+    // }
     if (description != string()) {
         cout << description << ": ";
         if (sep == '\n') cout << '\n';
     }
     const bool wait_for_inspect = (sep == 'q');
     auto ending_mark = '\n';
-    if (sep < 0) {
-        if (sep < -1) ending_mark = ' ';
-        sep = ' ';
+    if (sep <= 0) { // negative -- no newline. 0 or negative and even -- no separator.
+        if (sep == 0) { sep = 0; ending_mark = '\n'; }
+        else if (sep == -1) { sep = ' '; ending_mark = 0; }
+        else if (sep == -2) { sep = 0; ending_mark = ' '; }
+        else { sep = ' '; ending_mark = ' '; }
     } else if (!(sep == 0 || sep == ' ' || sep == '\n' || sep == '\t')) {
         sep = ' ';
         auto length = std::distance(first, last);
@@ -102,22 +121,41 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
             if (c == 'q') {
                 break;
             }
-        } else {
+        } else if (sep != 0) {
             std::cout << sep;
         }
     }
-    std::cout << ending_mark;
+    // if (ending_mark != '\n' && trailing_desc != "" && ending_mark != 0) {
+    if (trailing_desc != "") {
+        if (sep == 0) cout << ' ';
+        cout << trailing_desc;// << endl;
+        cout << ' ';
+    }
+    if (ending_mark)
+        std::cout << ending_mark;
 }
 
+// template < template<typename ... > class Container>
+// void print(const Container<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
 template <typename Container>
-void print(const Container &vec, std::string description="", char sep=' ') {
-    print(std::begin(vec), std::end(vec), description, sep);
+void print(const Container &c, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(c), std::end(c), description, sep, trailing_desc);
+}
+template <typename T>
+void print(std::initializer_list<T> c, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(c), std::end(c), description, sep, trailing_desc);
 }
 
 template <typename It>
-void print(It b, int n, std::string description="", char sep = ' ') {
+void print(It b, int n, std::string description="", signed char sep = ' ', std::string trailing_desc = "") {
     assert(n >= 0);
-    print(b, b + n, description, ' ');
+    print(b, b + n, description, sep, trailing_desc);
+}
+
+template <typename T>
+void print(const vector<vector<T>> &mat, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    if (!description.empty()) cout << description << ": " << endl;
+    for (const auto &vec: mat) print(vec, "", sep, trailing_desc);
 }
 
     // // example for print (with caveat.)
@@ -144,11 +182,6 @@ void print<double>(const std::vector<double> & vec) {
 }
 */
 
-template <typename T>
-void print(const vector<vector<T>> &mat) {
-    for (auto &vec: mat) print(vec);
-}
-
 std::vector<int> range(int start, int stop, int step) {
     /* generate a sequence.
      * step must **NOT** be zero.
@@ -171,7 +204,9 @@ std::vector<int> range(int start) {
 std::vector<int> range(int start, int stop) {
     return range(start, stop, 1);
 }
-
+std::vector<int> rrange(int start, int stop, int step = 1) { // similar to colon operator in R, inclusive on both side.
+    return range(start, stop + step, step);
+}
 // dVec range(double start, double stop, double step) {
 //     dVec vec;
 //     if (step == 0) {
@@ -195,6 +230,236 @@ std::vector<int> range(int start, int stop) {
 // std::vector<double> range(double stop) {
 //     return range(0, stop, 1);
 // }
+
+template <typename T>
+std::vector<T> operator*(const std::vector<T> &v, int k) {
+    k = std::max(0, k);
+    std::vector<T> res(v.size() * k);
+    for (auto p = res.begin(); k > 0; --k) {
+        for (auto x: v) *p++ = x;
+    }
+    return res;
+}
+template <typename T>
+std::vector<T> operator+(const std::vector<T> &lhs, const std::vector<T> &rhs) {
+    std::vector<T> res = lhs;
+    res.reserve(lhs.size() + rhs.size());
+    for (const auto &x: rhs) { res.push_back(x); }
+    return res;
+}
+
+template <typename T1, typename T2>
+std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &pair) {
+    os << pair.first << " " << pair.second << ", ";
+    return os;
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::set<T> makeSet(Iterator first, Iterator last) {
+    std::set<T> res;
+    for (; first != last; ++first) res.insert(*first);
+    return res;
+}
+// typename <typename Container, typename T = typename Container::value_type>
+template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+inline std::set<T> makeSet(const Container<T> &c) {
+    return makeSet(std::begin(c), std::end(c));
+}
+template <typename T>
+inline std::set<T> makeSet(std::initializer_list<T> c) {
+    return makeSet(std::begin(c), std::end(c));
+}
+template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
+    // if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
+    auto lset = std::set<T>(lhs.begin(), lhs.end());
+    auto rset = std::set<T>(rhs.begin(), rhs.end());
+    return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
+}
+
+template <typename T>
+std::vector<T> makeVec(std::initializer_list<T> c) {
+    return std::vector<T>(c);
+}
+template <typename Iterator,
+          typename UnaryFunc>
+auto makeVec(Iterator first, Iterator last, UnaryFunc f) {
+    std::vector<std::decay_t<decltype(f(*first))>> res;
+    for (; first != last; ++first) res.push_back(f(*first));
+    return res;
+}
+template <typename Iterator,
+          typename UnaryFunc>
+auto imakeVec(Iterator first, Iterator last, UnaryFunc f) { // i for iterator, -- f's parameter is iterator
+    std::vector<std::decay_t<decltype(f(first))>> res;
+    for (; first != last; ++first) res.push_back(f(first));
+    return res;
+}
+template <typename Container, typename T = typename Container::value_type,
+          typename UnaryFunc>
+inline auto makeVec(const Container &vec, UnaryFunc f) {
+    return makeVec(std::begin(vec), std::end(vec), f);
+}
+template <typename T,
+          typename UnaryFunc>
+inline auto makeVec(std::initializer_list<T> c, UnaryFunc f) {
+    return makeVec(std::begin(c), std::end(c), f);
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::unordered_map<T,int> uCounter(Iterator first, Iterator last) {
+    std::unordered_map<T,int> res;
+    for (; first != last; ++first) {
+        ++res[*first];  // value-initialization. http://stackoverflow.com/a/12965621/3625404  http://stackoverflow.com/a/2667376/3625404
+        // auto p = res.find(*first);
+        // if (p == res.end()) res[*first] = 1;
+        // else ++p->second;
+    }
+    return res;
+}
+// template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
+// inline std::unordered_map<T,int> uCounter(Container<T> c) {
+template <typename Container, typename T = typename Container::value_type>
+inline std::unordered_map<T,int> uCounter(const Container &c) {
+    return uCounter(std::begin(c), std::end(c));
+}
+template <typename T>
+inline std::unordered_map<T,int> uCounter(const std::initializer_list<T> &c) {
+    return uCounter(std::begin(c), std::end(c));
+}
+
+template <typename Iterator, typename T = typename std::iterator_traits<Iterator>::value_type>
+std::map<T,int> Rank(Iterator first, Iterator last) {
+    std::map<T,int> res;
+    for (; first != last; ++first) res[*first];
+    int rank = 0;
+    for(auto &x: res) x.second = rank++;
+    return res;
+}
+template <typename Container>
+auto Rank(const Container &c) {
+    return Rank(std::begin(c), std::end(c));
+}
+template <typename T>
+auto Rank(std::initializer_list<T> c) {
+    return Rank(std::begin(c), std::end(c));
+}
+
+// enumerate(), return a vector of pair<index, value>, index starting from zero.
+template <typename Iterator>
+std::vector<std::pair<size_t, typename Iterator::value_type>> enumerate(Iterator first, Iterator last) {
+    std::vector<std::pair<size_t, typename Iterator::value_type>> res;
+    for (size_t i = 0; first != last; ++i, ++first) res.push_back({i, *first});
+    return res;
+}
+template <typename Container>
+auto enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
+template <typename T>
+auto enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
+
+// is_sorted(), adapter only, since iterator version of is_sorted() and is_sorted_until() is already in <algorithm>.
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+auto is_sorted(const Container &c, Compare comp = Compare()) { return std::is_sorted(std::begin(c), std::end(c), comp); }
+template <typename T, typename Compare = std::less<T>>
+auto is_sorted(std::initializer_list<T> c, Compare comp = Compare()) { return std::is_sorted(std::begin(c), std::end(c), comp); }
+
+// sorted(), return a vector of sorted sequence.
+template <typename Iterator, typename Compare = std::less<typename Iterator::value_type>>
+std::vector<typename Iterator::value_type> sorted(Iterator first, Iterator last, Compare comp = Compare()) {
+    auto res = std::vector<typename Iterator::value_type> (first, last);
+    std::sort(res.begin(), res.end(), comp);
+    return res;
+}
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+std::vector<typename Container::value_type> sorted(const Container &c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
+template <typename T, typename Compare = std::less<T>>
+std::vector<T> sorted(std::initializer_list<T> c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
+
+vector<string> split(const string &s, char delim) {
+    vector<string> res;
+    auto it = s.begin(), last = s.end();
+    for (;;) {
+        for (; it != last && *it == delim; ++it) {}
+        if (it == last) break;
+        auto it_end = it;
+        for (; ++it_end != last && *it_end != delim;) {}
+        res.emplace_back(it, it_end);
+        it = it_end;
+    }
+    return res;
+}
+string join(const vector<string> &vec, const string &sep) {
+    string res;
+    if (!vec.empty()) {
+        res += vec[0];
+        for (size_t i = 1, sz = vec.size(); i < sz; ++i) {
+            res += sep;
+            res += vec[i];
+        }
+    }
+    return res;
+}
+
+template <typename Container, typename T = typename Container::value_type>
+void trimAll(Container &c, T delim) {
+    if (!c.empty()) {
+        typename Container::iterator d = c.begin(), last = c.end(), p;
+        // cout << "sz = " << c.size() << endl;
+        for (; last != d && *--last == delim;) {}
+        if (!(last == d && *last == delim)) ++last; // trim trailing delim(s).
+        // cout << "sz = " << last - c.begin() << " -- after trim trailing" << endl;
+        for (; d != last && *d != delim;) { // skip leading words that are already in place.
+            for (; ++d != last && *d != delim;) {}
+            if (d == last) break;
+            ++d;
+        }
+        // assert(d <= last);
+        for (p = d;;) {
+            // cout << "index = " << p - c.begin() << endl;
+            for (; p != last && *p == delim; ++p) {}
+            for (; p != last && *p != delim; ++p, ++d) *d = std::move(*p);
+            if (p == last) break;
+            *d++ = std::move(*p++);
+        }
+        c.resize(d - c.begin());
+    }
+}
+
+namespace test {
+    using ::print;
+    void init(int DEBUG = 0) {
+        ::DEBUG = DEBUG;
+        cout << std::boolalpha;
+    }
+}
+
+namespace test {
+    void deduction() {
+        print({2,3,5,8});
+        // print({2,3.1,5,8}); // error, type deduction failed.
+        print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
+    }
+    void divmod(int caseNo = 0, int m = 5, int n = 3) { // see also bitmod
+        std::vector<std::pair<int,int>> vec;
+        if (caseNo == 1) // minuend negated, subtrahend remain same
+            vec = {{m,n},{-m,n}};
+        else // default, all four cases
+            vec = {{m,n},{m,-n},{-m,n},{-m,-n}};
+        for (auto x: vec) {
+            int m = x.first, n = x.second;
+            // cout << m << " / " << n << " = " << m / n << ",\t" << m << " % " << n << " = " << m % n << endl;
+            printf("%2d / %2d = %2d, %2d %% %2d = %2d \n", m,n,m/n,m,n,m%n);
+        }
+    }
+}
+
+namespace test {
+    void nan_float() {
+        float x = 1.1;
+        if (x != 1.1)
+            printf("OMG! Floats suck!\n");
+    }
+}
 
 bool isPrime(int n) { 
     if (n <= 1) return false;
@@ -277,11 +542,28 @@ class Prime {
         }
 };
 
+namespace test {
+    // (x % 2) != (x & 1) for negative odd integer!!!
+    // to correctly write condition for integers a b k such that a > b * k, where k > 1, the answer is a / k + (a % k > 0) > b, -- no overflow, works for both negative and positive numbers. -- note this is answer in C-like language, in python, the divmod behavior is different.
+    void bitmod() { // see also divmod
+        std::vector<int> vec{INT_MIN,INT_MIN + 1, -9,-8,-3,-2,-1,0,1,2,3,9,10,13,INT_MAX - 1,INT_MAX};
+        for (auto x: vec) {
+            cout << "x = " << x << ", x % 2 = " << x % 2 << ", x & 1 = " << (x & 1) << endl;
+            for (auto y: vec) {
+                for (int k: {2,3,4,5,6,7}) {
+                    assert((y > x * (long long) k) == (y / k + (y % k > 0) > x));
+                }
+            }
+        }
+    }
+}
+
 #endif
 // below are vocabulary that aid vim completion.
 // extensibility
 /**
-    out_of_range  overflow_error
+    runtime_error overflow_error
+    bad_alloc out_of_range invalid_argument
     throw std::invalid_argument( "received negative value" );
     catch(const std::invalid_argument& e) {   // And you should always catch exceptions as const? comment in http://stackoverflow.com/a/8480675/3625404
 **/

@@ -44,7 +44,6 @@ Timsort uses merge sort and insertion sort. Both are stable and merge sort has w
 TODO  timsort(merge_sort)    inplace merge(eg, in std::stable_sort, as fallback.)
 */
 
-auto stack_level = 0;
 enum { S_threshold = 4 };
 
 template <typename RandomIt>
