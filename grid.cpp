@@ -42,7 +42,71 @@ namespace test {
     }
 }
 
+// 542. 01 Matrix https://leetcode.com/problems/01-matrix/#/description
+//  Given a matrix consists of 0 and 1, find the distance of the nearest 0 for each cell.
+// The distance between two adjacent cells is 1.
+// Example 1:
+// Input:
+// 0 0 0
+// 0 1 0
+// 0 0 0
+// Output:
+// 0 0 0
+// 0 1 0
+// 0 0 0
+// Example 2:
+// Input:
+// 0 0 0
+// 0 1 0
+// 1 1 1
+// Output:
+// 0 0 0
+// 0 1 0
+// 1 2 1
+// Note:
+//     The number of elements of the given matrix will not exceed 10,000.
+//     There are at least one 0 in the given matrix.
+//     The cells are adjacent in only four directions: up, down, left and right.
+// **just update from four direction**, since this is just [Manhattan distance] (https://en.wikipedia.org/wiki/Taxicab_geometry)
+    vector<vector<int>> updateMatrix(vector<vector<int>>& matrix) {
+        const int m = matrix.size(), n = matrix.empty()? 0 : matrix[0].size();
+        auto res = matrix;
+        for (auto &vec: res) {
+            for (auto &x: vec) {
+                if (x != 0) { x = m + n; }  // set to upper bound
+            }
+        }
+        for (int i = 0, h = m - 1; i < m; ++i, --h) {
+            for (int j = 0, k = n - 1; j < n; ++j, --k) {
+                if (i != 0) {   // not row border
+                    res[i][j] = std::min(res[i][j], res[i-1][j] + 1);
+                    res[h][j] = std::min(res[h][j], res[h+1][j] + 1);
+                }
+                if (j != 0) {   // not column border
+                    res[i][j] = std::min(res[i][j], res[i][j-1] + 1);
+                    res[i][k] = std::min(res[i][k], res[i][k+1] + 1);
+                    res[h][j] = std::min(res[h][j], res[h][j-1] + 1);
+                    res[h][k] = std::min(res[h][k], res[h][k+1] + 1);
+                }
+            }
+        }
+        return res;
+    }
+
+namespace test {
+    void updateMatrix() {
+        std::vector<std::vector<int>> v = {
+            {0, 0, 0},
+            {0, 1, 0},
+            {1, 1, 1}
+        };
+        auto res = ::updateMatrix(v);
+        print(res,"updateMatrix(v)");
+    }
+}
+
 int main() {
     test::init();
-    test::islandPerimeter();
+    // test::islandPerimeter();
+    test::updateMatrix();
 }
