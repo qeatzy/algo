@@ -1,6 +1,7 @@
 #include "utility.h"
 // "tp(two pointer), 1. crossing, eg, Hoare partition. 2. sliding window. 3. slow-fast, eg, floyd cycle detection.
 // be careful for sliding window, ask yourself 'left < right' or 'left <= right' is needed.
+// 1. Finding intersection of two sorted arrays.  http://articles.leetcode.com/here-is-phone-screening-question-from/
 
 
 // 532. K-diff Pairs in an Array https://leetcode.com/problems/k-diff-pairs-in-an-array/?tab=Description
@@ -74,6 +75,7 @@ namespace test {
         std::vector<std::vector<int>> vec;
         vec.push_back({1,3,1,5,4, 0});
         vec.push_back({3,1,4,1,5, 2});
+        vec.push_back({3,3,1,4,1,5, 2});
         vec.push_back({0,0,0,  0});
         vec.push_back({6,7,3,6,4,6,3,5,6,9,   4});
         for (auto &v: vec) {
