@@ -10,6 +10,7 @@ int DEBUG = 0, stack_level = 0;
 // #include <deque>
 #include <set>
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
@@ -137,12 +138,12 @@ void print(Iterator first, Iterator last, std::string description="", signed cha
 // template < template<typename ... > class Container>
 // void print(const Container<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
 template <typename Container>
-void print(const Container &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
-    print(std::begin(vec), std::end(vec), description, sep, trailing_desc);
+void print(const Container &c, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(c), std::end(c), description, sep, trailing_desc);
 }
 template <typename T>
-void print(const std::initializer_list<T> &vec, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
-    print(std::begin(vec), std::end(vec), description, sep, trailing_desc);
+void print(std::initializer_list<T> c, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
+    print(std::begin(c), std::end(c), description, sep, trailing_desc);
 }
 
 template <typename It>
@@ -154,7 +155,7 @@ void print(It b, int n, std::string description="", signed char sep = ' ', std::
 template <typename T>
 void print(const vector<vector<T>> &mat, std::string description="", signed char sep=' ', std::string trailing_desc = "") {
     if (!description.empty()) cout << description << ": " << endl;
-    for (auto &vec: mat) print(vec, "", sep, trailing_desc);
+    for (const auto &vec: mat) print(vec, "", sep, trailing_desc);
 }
 
     // // example for print (with caveat.)
@@ -239,6 +240,13 @@ std::vector<T> operator*(const std::vector<T> &v, int k) {
     }
     return res;
 }
+template <typename T>
+std::vector<T> operator+(const std::vector<T> &lhs, const std::vector<T> &rhs) {
+    std::vector<T> res = lhs;
+    res.reserve(lhs.size() + rhs.size());
+    for (const auto &x: rhs) { res.push_back(x); }
+    return res;
+}
 
 template <typename T1, typename T2>
 std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &pair) {
@@ -254,21 +262,25 @@ std::set<T> makeSet(Iterator first, Iterator last) {
 }
 // typename <typename Container, typename T = typename Container::value_type>
 template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
-inline std::set<T> makeSet(Container<T> c) {
+inline std::set<T> makeSet(const Container<T> &c) {
     return makeSet(std::begin(c), std::end(c));
 }
 template <typename T>
-inline std::set<T> makeSet(const std::initializer_list<T> &c) {
+inline std::set<T> makeSet(std::initializer_list<T> c) {
     return makeSet(std::begin(c), std::end(c));
 }
 template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
 bool issubset(const Container<T> &lhs, const Container<T> &rhs) {
-    if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
+    // if (DEBUG) { cout << "issubset: " << endl; print(lhs,"lhs"); print(rhs,"rhs"); }
     auto lset = std::set<T>(lhs.begin(), lhs.end());
     auto rset = std::set<T>(rhs.begin(), rhs.end());
     return std::includes(rset.begin(), rset.end(), lset.begin(), lset.end());
 }
 
+template <typename T>
+std::vector<T> makeVec(std::initializer_list<T> c) {
+    return std::vector<T>(c);
+}
 template <typename Iterator,
           typename UnaryFunc>
 auto makeVec(Iterator first, Iterator last, UnaryFunc f) {
@@ -290,7 +302,7 @@ inline auto makeVec(const Container &vec, UnaryFunc f) {
 }
 template <typename T,
           typename UnaryFunc>
-inline auto makeVec(const std::initializer_list<T> &c, UnaryFunc f) {
+inline auto makeVec(std::initializer_list<T> c, UnaryFunc f) {
     return makeVec(std::begin(c), std::end(c), f);
 }
 
@@ -308,7 +320,7 @@ std::unordered_map<T,int> uCounter(Iterator first, Iterator last) {
 // template < template<typename ... > class Container, typename T> // http://stackoverflow.com/a/27078093/3625404
 // inline std::unordered_map<T,int> uCounter(Container<T> c) {
 template <typename Container, typename T = typename Container::value_type>
-inline std::unordered_map<T,int> uCounter(Container c) {
+inline std::unordered_map<T,int> uCounter(const Container &c) {
     return uCounter(std::begin(c), std::end(c));
 }
 template <typename T>
@@ -329,33 +341,39 @@ auto Rank(const Container &c) {
     return Rank(std::begin(c), std::end(c));
 }
 template <typename T>
-auto Rank(const std::initializer_list<T> &c) {
+auto Rank(std::initializer_list<T> c) {
     return Rank(std::begin(c), std::end(c));
 }
 
-template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
-ForwardIt isSorted_until(ForwardIt first, ForwardIt last) {
-// ForwardIt is_sorted_until(ForwardIt first, ForwardIt last) {
-    if (first == last) return last;
-    auto next = first;
-    ++next;
-    for (; next != last && !(*next < *first); ++first, ++next) { }
-    return next;
+// enumerate(), return a vector of pair<index, value>, index starting from zero.
+template <typename Iterator>
+std::vector<std::pair<size_t, typename Iterator::value_type>> enumerate(Iterator first, Iterator last) {
+    std::vector<std::pair<size_t, typename Iterator::value_type>> res;
+    for (size_t i = 0; first != last; ++i, ++first) res.push_back({i, *first});
+    return res;
 }
-// template <typename ForwardIt, typename T = typename std::iterator_traits<ForwardIt>::value_type>
-// inline bool isSorted(ForwardIt first, ForwardIt last) {
-// // inline bool is_sorted(ForwardIt first, ForwardIt last) {
-//     return is_sorted_until(first, last) == last;
-// }
-template < template<typename ... > class Container, typename T>
-inline bool is_sorted(const Container<T> &c) {
-    return is_sorted(std::begin(c), std::end(c));
-}
+template <typename Container>
+auto enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
 template <typename T>
-inline bool is_sorted(const std::initializer_list<T> &c) {
-    // return is_sorted(std::begin(c), std::end(c));    // deduction failed for STL. const's fault??  eg, const int*
-    return isSorted_until(std::begin(c), std::end(c)) == std::end(c);
+auto enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
+
+// is_sorted(), adapter only, since iterator version of is_sorted() and is_sorted_until() is already in <algorithm>.
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+auto is_sorted(const Container &c, Compare comp = Compare()) { return std::is_sorted(std::begin(c), std::end(c), comp); }
+template <typename T, typename Compare = std::less<T>>
+auto is_sorted(std::initializer_list<T> c, Compare comp = Compare()) { return std::is_sorted(std::begin(c), std::end(c), comp); }
+
+// sorted(), return a vector of sorted sequence.
+template <typename Iterator, typename Compare = std::less<typename Iterator::value_type>>
+std::vector<typename Iterator::value_type> sorted(Iterator first, Iterator last, Compare comp = Compare()) {
+    auto res = std::vector<typename Iterator::value_type> (first, last);
+    std::sort(res.begin(), res.end(), comp);
+    return res;
 }
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+auto sorted(const Container &c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
+template <typename T, typename Compare = std::less<T>>
+auto sorted(std::initializer_list<T> c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
 
 vector<string> split(const string &s, char delim) {
     vector<string> res;
@@ -382,6 +400,31 @@ string join(const vector<string> &vec, const string &sep) {
     return res;
 }
 
+template <typename Container, typename T = typename Container::value_type>
+void trimAll(Container &c, T delim) {
+    if (!c.empty()) {
+        typename Container::iterator d = c.begin(), last = c.end(), p;
+        // cout << "sz = " << c.size() << endl;
+        for (; last != d && *--last == delim;) {}
+        if (!(last == d && *last == delim)) ++last; // trim trailing delim(s).
+        // cout << "sz = " << last - c.begin() << " -- after trim trailing" << endl;
+        for (; d != last && *d != delim;) { // skip leading words that are already in place.
+            for (; ++d != last && *d != delim;) {}
+            if (d == last) break;
+            ++d;
+        }
+        // assert(d <= last);
+        for (p = d;;) {
+            // cout << "index = " << p - c.begin() << endl;
+            for (; p != last && *p == delim; ++p) {}
+            for (; p != last && *p != delim; ++p, ++d) *d = std::move(*p);
+            if (p == last) break;
+            *d++ = std::move(*p++);
+        }
+        c.resize(d - c.begin());
+    }
+}
+
 namespace test {
     using ::print;
     void init(int DEBUG = 0) {
@@ -391,20 +434,30 @@ namespace test {
 }
 
 namespace test {
-    using::range;
-    void is_sorted() {
-        print(range(4),"",-2);
-        cout << "sorted? " << ::is_sorted(range(4)) << endl;
-        print({1,3,2,5},"",-2);
-        cout << "sorted? " << ::is_sorted({1,3,2,5}) << endl;
-    }
-}
-
-namespace test {
     void deduction() {
         print({2,3,5,8});
         // print({2,3.1,5,8}); // error, type deduction failed.
         print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
+    }
+    void divmod(int caseNo = 0, int m = 5, int n = 3) {
+        std::vector<std::pair<int,int>> vec;
+        if (caseNo == 1) // minuend negated, subtrahend remain same
+            vec = {{m,n},{-m,n}};
+        else // default, all four cases
+            vec = {{m,n},{m,-n},{-m,n},{-m,-n}};
+        for (auto x: vec) {
+            int m = x.first, n = x.second;
+            // cout << m << " / " << n << " = " << m / n << ",\t" << m << " % " << n << " = " << m % n << endl;
+            printf("%2d / %2d = %2d, %2d %% %2d = %2d \n", m,n,m/n,m,n,m%n);
+        }
+    }
+}
+
+namespace test {
+    void nan_float() {
+        float x = 1.1;
+        if (x != 1.1)
+            printf("OMG! Floats suck!\n");
     }
 }
 
