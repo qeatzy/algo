@@ -118,7 +118,6 @@ namespace test {
 
 int main() {
     test::init();
-    // test::isValidSudoku();
     test::MinStack();
 }
 
