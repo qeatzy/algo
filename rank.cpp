@@ -1,6 +1,6 @@
 #include "utility.h"
-// sort/rank related. eg, count inversion.
-// tag:  Binary Indexed Tree  https://leetcode.com/tag/binary-indexed-tree/
+// sort/rank related. eg, count inversion. see also " binarySearch.cpp
+// for merge related, see " merge.cpp in br pac
 
 // 506. Relative Ranks https://leetcode.com/problems/relative-ranks/#/description
 // Given scores of N athletes, find their relative ranks and the people with the top three highest scores, who will be awarded medals: "Gold Medal", "Silver Medal" and "Bronze Medal".

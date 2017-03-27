@@ -3,6 +3,7 @@
 // note binary search for first truth value. -- if you need to find last, it's just reversely first.
 // logarithm complexity of binary search like algorithm comes from at each step we reduce
 // the range to half, what if we reduce both part by half, will it still be logarithm? A such case with analysis here, https://discuss.leetcode.com/topic/16486/9-11-lines-o-log-n
+// find kth of two sorted array, findKth
 
 // http://en.cppreference.com/w/cpp/algorithm/lower_bound
 // template<typename Iterator, typename T>
@@ -230,15 +231,16 @@ namespace test {
 // For example, Given [5, 7, 7, 8, 8, 10] and target value 8, return [3, 4].
 // TODO write and analysis the complexity of divide and conquer solution, similar to this  https://discuss.leetcode.com/topic/16486/9-11-lines-o-log-n
     vector<int> searchRange(vector<int>& nums, int target) {
-        auto bounds = std::equal_range(nums.begin(), nums.end(), target);
-        if (bounds.first == bounds.second)
-            return {-1,-1};
-        return {bounds.first - nums.begin(), bounds.second - nums.begin() - 1};
-        auto p = std::lower_bound(nums.begin(), nums.end(), target);
-        if (p != nums.end() && *p == target) {
-            int right = nums.rend() - std::lower_bound(nums.rbegin(), nums.rend(), target, std::greater<int>()) - 1;
-            return {p - nums.begin(), right};
-        } else return {-1,-1};
+        return {};   // below containing two many warnings of narrowing
+        // auto bounds = std::equal_range(nums.begin(), nums.end(), target);
+        // if (bounds.first == bounds.second)
+        //     return {-1,-1};
+        // return {bounds.first - nums.begin(), bounds.second - nums.begin() - 1};
+        // auto p = std::lower_bound(nums.begin(), nums.end(), target);
+        // if (p != nums.end() && *p == target) {
+        //     int right = nums.rend() - std::lower_bound(nums.rbegin(), nums.rend(), target, std::greater<int>()) - 1;
+        //     return {p - nums.begin(), right};
+        // } else return {-1,-1};
     }
 
 namespace test {
@@ -255,9 +257,80 @@ namespace test {
     }
 }
 
+// 4. Median of Two Sorted Arrays  https://leetcode.com/problems/median-of-two-sorted-arrays/#/description
+// Find the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).
+// Example 1:
+// nums1 = [1, 3]
+// nums2 = [2]
+// The median is 2.0
+// Example 2:
+// nums1 = [1, 2]
+// nums2 = [3, 4]
+// The median is (2 + 3)/2 = 2.5
+// find k-th of two sorted array
+// library
+    template <typename RandomIt, typename T = typename std::iterator_traits<RandomIt>::value_type>
+    T findKth(RandomIt first1, RandomIt last1, RandomIt first2, RandomIt last2, size_t k) {
+        // k is 0-based, the key point is choose two prefix sub-array, and let the sum of
+        // length as large as possile, -- up to k + 1 -- and skip the smaller one.
+        size_t n1 = last1 - first1, n2 = last2 - first2;
+        ++k;
+        for (size_t a1, a2; k > 1 && n1 > 0 && n2 > 0; ) {
+            a1 = std::min(k / 2, n1);
+            a2 = std::min(k - a1, n2);
+            if (first1[a1-1] <= first2[a2-1]) { first1 += a1, n1 -= a1, k -= a1; }
+            else { first2 += a2, n2 -= a2, k -= a2; }
+        }
+        --k;
+        if (n1 == 0) return first2[k];
+        if (n2 == 0) return first1[k];
+        return std::min(*first1, *first2);
+    }
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        int sz1 = nums1.size(), sz2 = nums2.size();
+        int half = (sz2 + sz1) / 2;
+        double res = findKth(nums1.begin(), nums1.end(), nums2.begin(), nums2.end(), half);;
+        if ((sz1 & 1) == (sz2 & 1)) res = (res + findKth(nums1.begin(), nums1.end(), nums2.begin(), nums2.end(), half-1)) / 2;
+        return res;
+    }
+
+namespace test {
+    void findMedianSortedArrays() {
+        std::vector<std::vector<int>> vec;
+        // vec.push_back({1,2,3,4,5});
+        // vec.push_back({6,7,8});
+        // vec.push_back({1,3});
+        // vec.push_back({2});
+        // vec.push_back({1,2});
+        // vec.push_back({3,4});
+        // vec.push_back({1,2,3});
+        // vec.push_back({1,2,2});
+        // vec.push_back({1,2,2});
+        // vec.push_back({1,2,3});
+        // vec.push_back({1});
+        // vec.push_back({2,3,4});
+        vec.push_back({3,4});
+        vec.push_back({});
+        // vec.push_back({1, 12, 15, 26, 38});
+        // vec.push_back({2, 13, 17, 30, 45});
+        // vec.push_back({5, 10, 12, 15, 20});
+        // vec.push_back({5, 10, 12, 15});
+        for (int i = 0, sz = vec.size(); i < sz - 1; i += 2) {
+            auto &nums1 = vec[i];
+            auto &nums2 = vec[i+1];
+            print(nums1,"nums1");
+            print(nums2,"nums2");
+            auto res = ::findMedianSortedArrays(nums1, nums2);
+            cout << " midean of nums1 and nums2 is " << res << endl;
+        }
+    }
+}
+
+
 int main() {
     // test::binarySearch();
     // test::first_index_equal_to_value_in_an_increasing_sequence();
     // test::search_rotated();
-    test::searchRange();
+    // test::searchRange();
+    test::findMedianSortedArrays();
 }
