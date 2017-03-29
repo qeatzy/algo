@@ -12,12 +12,28 @@ VPATH = $(SRCDIR)
 
 # Normal makefile rules here
 # "cpp
-CXX=g++
-# CXXFLAGS=-g -std=c++11 -fext-numeric-literals -Wall -pedantic
-CXXFLAGS=-g -std=c++14 -fext-numeric-literals -Wall -Wno-comment -pedantic -O2
-# CXXFLAGS=-g -std=c++11 -fext-numeric-literals -Wall -Wno-comment -pedantic -O3
-%: %.cpp
-	$(CXX) $(CXXFLAGS) $< -o $@
+CXX     = g++
+# CXX     = clang
+DEBUG   = -g
+# DEBUG   = -g -H
+# CXXFLAGS  = -Wall $(DEBUG) -std=c++11 -pthread
+# LDFLAGS = -pthread
+# CXXFLAGS=$(DEBUG) -std=c++14 -fext-numeric-literals -Wall -Wno-comment -pedantic -O2
+CXXFLAGS=$(DEBUG) -std=c++14 -fext-numeric-literals -Wno-comment -pedantic -O2
+
+OBJS = 
+.PHONY: all utils
+# all: utils
+%: %.o
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS)
+%.o: %.cpp utility.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
+utils: utility
+utility: utility.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
+
+# %: %.cpp
+# 	$(CXX) $(CXXFLAGS) $< -o $@
 
 # "java
 CLASSPATH=_test
