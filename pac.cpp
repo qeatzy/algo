@@ -1,5 +1,7 @@
 #include "utility.h"
-// pac, partition and combine, each could be trivial. 1. dac 2. dp
+// pac, partition and combine, each could be trivial, see also " ls.cpp " dp.cpp
+// 1. dac (divide and conquer) 2. dp (dynamic programming)
+// many useful data structures, highly recommended.  Algorithm Gym :: Data structures  http://codeforces.com/blog/entry/15729
 // Divide and Conquer   https://leetcode.com/tag/divide-and-conquer/
 // Dynamic Programming   https://leetcode.com/tag/dynamic-programming/
 // Array    https://leetcode.com/tag/array/
@@ -193,7 +195,7 @@ namespace test {
 
 int main() {
     test::init();
-    // test::findMaxLength();
+    // test::lengthOfLIS();
     test::maxProduct();
     // test::maxSubArray();
 }

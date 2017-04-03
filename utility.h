@@ -353,9 +353,9 @@ std::vector<std::pair<size_t, typename Iterator::value_type>> enumerate(Iterator
     return res;
 }
 template <typename Container>
-auto enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
+std::vector<std::pair<size_t, typename Container::value_type>> enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
 template <typename T>
-auto enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
+std::vector<std::pair<size_t, T>> enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
 
 // is_sorted(), adapter only, since iterator version of is_sorted() and is_sorted_until() is already in <algorithm>.
 template <typename Container, typename Compare = std::less<typename Container::value_type>>
@@ -371,9 +371,9 @@ std::vector<typename Iterator::value_type> sorted(Iterator first, Iterator last,
     return res;
 }
 template <typename Container, typename Compare = std::less<typename Container::value_type>>
-auto sorted(const Container &c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
+std::vector<typename Container::value_type> sorted(const Container &c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
 template <typename T, typename Compare = std::less<T>>
-auto sorted(std::initializer_list<T> c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
+std::vector<T> sorted(std::initializer_list<T> c, Compare comp = Compare()) { return sorted(std::begin(c), std::end(c), comp); }
 
 vector<string> split(const string &s, char delim) {
     vector<string> res;
@@ -439,7 +439,7 @@ namespace test {
         // print({2,3.1,5,8}); // error, type deduction failed.
         print(std::initializer_list<double>{2,3.1,5,8});    // ok, explicit type.
     }
-    void divmod(int caseNo = 0, int m = 5, int n = 3) {
+    void divmod(int caseNo = 0, int m = 5, int n = 3) { // see also bitmod
         std::vector<std::pair<int,int>> vec;
         if (caseNo == 1) // minuend negated, subtrahend remain same
             vec = {{m,n},{-m,n}};
@@ -541,6 +541,22 @@ class Prime {
             cout << "this->threshold = " << this->threshold << ", threshold = " << threshold << ", primes.size() = " << primes.size() << '\n';
         }
 };
+
+namespace test {
+    // (x % 2) != (x & 1) for negative odd integer!!!
+    // to correctly write condition for integers a b k such that a > b * k, where k > 1, the answer is a / k + (a % k > 0) > b, -- no overflow, works for both negative and positive numbers. -- note this is answer in C-like language, in python, the divmod behavior is different.
+    void bitmod() { // see also divmod
+        std::vector<int> vec{INT_MIN,INT_MIN + 1, -9,-8,-3,-2,-1,0,1,2,3,9,10,13,INT_MAX - 1,INT_MAX};
+        for (auto x: vec) {
+            cout << "x = " << x << ", x % 2 = " << x % 2 << ", x & 1 = " << (x & 1) << endl;
+            for (auto y: vec) {
+                for (int k: {2,3,4,5,6,7}) {
+                    assert((y > x * (long long) k) == (y / k + (y % k > 0) > x));
+                }
+            }
+        }
+    }
+}
 
 #endif
 // below are vocabulary that aid vim completion.
