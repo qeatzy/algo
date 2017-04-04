@@ -1,0 +1,2 @@
+
+// Trees are the most useful containers for DSU (Disjoint Sets Union).  The best way I've seen to code this kind of DSU, is style of bmerry : (C++)   Other way is to keep them in a red-black tree (in C++ it's set). We do exactly like vectors, so time complexity would be O(n.log2(n)). (One log is for inserting). Problems: Hamro and tools, TROY Query (Join the group ACM-OI first)  http://codeforces.com/blog/entry/15729
