@@ -14,6 +14,18 @@
         return res;
     }
 
+// 462. Minimum Moves to Equal Array Elements II  https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/#/description
+// Input:
+// [1,2,3]
+// Output:
+// 2
+// Explanation:
+// Only two moves are needed (remember each move increments or decrements one element):
+// [1,2,3]  =>  [2,2,3]  =>  [2,2,2]
+    int minMoves2(vector<int>& nums) {
+        
+    }
+
 // 231. Power of Two https://leetcode.com/problems/power-of-two/?tab=Description
     bool isPowerOfTwo(int n) {
         // return (n&(n-1)) == 0 && n > 0;
@@ -48,7 +60,6 @@ namespace test {
 
 int main() {
     test::init();
-    // test::isValidSudoku();
     // test::reverse_integer();
     // test::isIsomorphic();
     // test::wordPattern();
