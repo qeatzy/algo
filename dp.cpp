@@ -81,8 +81,52 @@ namespace test {
         return first == last;
     }
 
+// 376. Wiggle Subsequence  https://leetcode.com/problems/wiggle-subsequence/#/description
+// Examples:
+// Input: [1,7,4,9,2,5]
+// Output: 6
+// The entire sequence is a wiggle sequence.
+// Input: [1,17,5,10,13,15,10,5,16,8]
+// Output: 7
+// There are several subsequences that achieve this length. One is [1,17,10,13,10,16,8].
+// Input: [1,2,3,4,5,6,7,8,9]
+// Output: 2
+// Follow up: Can you do it in O(n) time? 
+// TODO 
+    int wiggleMaxLength(vector<int>& nums) {
+        
+    }
+
+// 152. Maximum Product Subarray  https://leetcode.com/problems/maximum-product-subarray/#/description
+// Find the contiguous subarray within an array (containing at least one number) which has the largest product. 
+// For example, given the array [2,3,-2,4],
+// the contiguous subarray [2,3] has the largest product = 6. 
+    int maxProduct(vector<int>& nums) {
+        int min = 1, max = 1, res = INT_MIN;    // bug, overflow?
+        for (auto x: nums) {
+            if (x < 0) std::swap(min, max);
+            min = std::min(x, min * x);
+            max = std::max(x, max * x);
+            res = std::max(res, max);
+        }
+        return res;
+    }
+
+namespace test {
+    void maxProduct() {
+        std::vector<std::vector<int>> vec;
+        vec.push_back({2,3,-2,4});
+        for (auto &v: vec) {
+            print(v,"v");
+            auto res = ::maxProduct(v);
+            cout << "::maxProduct(v) = " << res << endl;
+        }
+    }
+}
+
 int main() {
     test::init();
     // test::findMaxLength();
-    test::maxProfit();
+    // test::maxProfit();
+    test::maxProduct();
 }

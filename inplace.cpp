@@ -51,5 +51,4 @@
 
 int main() {
     test::init();
-    // test::isValidSudoku();
 }
