@@ -17,7 +17,13 @@ Makefile : ;
 
 % :: $(OBJDIR) ; :
 
-.PHONY: clean
+.PHONY: clean realclean
 clean:
-	rm -rf $(OBJDIR)
-	rm -rf *.exe.stackdump
+	rm -f $(OBJDIR)/* && pwd
+realclean:
+	rm -f $(OBJDIR)/* && rm -f *.h.gch && pwd
+
+# .PHONY: clean
+# clean:
+# 	rm -rf $(OBJDIR)
+# 	rm -rf *.exe.stackdump

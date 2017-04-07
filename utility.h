@@ -15,7 +15,7 @@ int DEBUG = 0, stack_level = 0;
 #include <string>
 #include <cstring>  // strlen, string literal of type const char [].
 #include <algorithm>
-#include <numeric>
+#include <numeric>  // accumulate
 #include <cmath>    // pow
 // #include <valarray>
 #include <array>
@@ -353,9 +353,9 @@ std::vector<std::pair<size_t, typename Iterator::value_type>> enumerate(Iterator
     return res;
 }
 template <typename Container>
-auto enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
+std::vector<std::pair<size_t, typename Container::value_type>> enumerate(const Container &c) { return enumerate(std::begin(c), std::end(c)); }
 template <typename T>
-auto enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
+std::vector<std::pair<size_t, T>> enumerate(std::initializer_list<T> c) { return enumerate(std::begin(c), std::end(c)); }
 
 // is_sorted(), adapter only, since iterator version of is_sorted() and is_sorted_until() is already in <algorithm>.
 template <typename Container, typename Compare = std::less<typename Container::value_type>>
@@ -558,7 +558,7 @@ namespace test {
     }
 }
 
-#endif
+#endif  // UTILITY_H_INCLUDED
 // below are vocabulary that aid vim completion.
 // extensibility
 /**
@@ -566,7 +566,7 @@ namespace test {
     bad_alloc out_of_range invalid_argument
     throw std::invalid_argument( "received negative value" );
     catch(const std::invalid_argument& e) {   // And you should always catch exceptions as const? comment in http://stackoverflow.com/a/8480675/3625404
+    std::bad_alloc Defined in header <new>  http://en.cppreference.com/w/cpp/memory/new/bad_alloc
+    std::runtime_error Defined in header <stdexcept>  http://en.cppreference.com/w/cpp/error/runtime_error
 **/
-
-
 

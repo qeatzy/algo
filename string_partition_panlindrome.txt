@@ -1,0 +1,72 @@
+UESTC-ACM-2017-新人交流群  554056561
+题目描述
+Given a string s, partition s such that every substring of the partition is a palindrome.
+Return the minimum cuts needed for a palindrome partitioning of s. For example, given s = "aab", return 1, since the palindrome partitioning ["aa","b"] could be produced using 1 cut.
+
+这道题有O（n）或者nlogn的做法吗？
+这道题有复杂度低于O（n^2）的做法吗？
+/小纠结
+18-阴阳师-郭镇(516789759)  1:53:17 PM
+我记得有论文
+可以做到O n
+_(2896371938)  1:53:24 PM
+咋做的？
+18-阴阳师-郭镇(516789759)  1:53:31 PM
+嗯。。
+回忆不起来了
+_(2896371938)  1:53:35 PM
+难吗？
+18-阴阳师-郭镇(516789759)  1:53:42 PM
+不难吧
+_(2896371938)  1:53:42 PM
+那个论文。。
+好吧。。。
+18-阴阳师-郭镇(516789759)  1:53:48 PM
+看懂都简单
+_(2896371938)  1:53:53 PM
+是用的dp?
+18-阴阳师-郭镇(516789759)  1:54:03 PM
+我想不起来了
+_(2896371938)  1:54:20 PM
+
+18-阴阳师-郭镇(516789759)  1:54:21 PM
+卿大爷是会的
+_(2896371938)  1:54:34 PM
+求教
+18-阴阳师-郭镇(516789759)  1:54:43 PM
+@16-经管-卿俊 
+16-经管-卿俊<qscqesze@qq.com>  1:55:16 PM
+哪需要那个呀……
+你on预处理回文串 然后dp转移吧
+噢 还是得n^2
+16-经管-卿俊<qscqesze@qq.com>  1:57:45 PM
+我得翻翻
+_(2896371938)  1:57:46 PM
+
+没有oN了？
+好吧，，，，
+✟Emmanuel(842573049)  1:58:40 PM
+http://url.cn/47QMlkD
+16-经管-卿俊<qscqesze@qq.com>  1:59:24 PM
+https://github.com/zimpha/algorithmic-library/blob/master/string-utility/palindomic-factorization.cc
+✟Emmanuel(842573049)  1:59:33 PM
+这篇论文，可以做到nlogn，目前还没有O(n)的做法好像
+16-经管-卿俊<qscqesze@qq.com>  2:01:30 PM
+我给的是模板 复制即用
+_(2896371938)  2:03:02 PM
+这么长。。。
+论文
+16-经管-卿俊<qscqesze@qq.com>  2:03:11 PM
+https://www.luogu.org/problem/show?pid=3694  题目链接
+这个题怎么做啊
+_(2896371938)  2:03:20 PM
+渣渣表示看的有压力
+16-计算机-丛迅(971651029)  3:21:57 PM
+渣渣表示看的有压力
+17-料理-捞鱼(121371490)  3:24:59 PM
+我觉得可以on好像
+17-料理-捞鱼(121371490)  3:26:30 PM
+喔
+并不能
+我弱鸡
+16-光电–唐南(810711940)  3:33:29 PM
